@@ -43,3 +43,18 @@ select foo.* from
 select sum(manzanas_zmvm.pob1), buf.estacion from manzanas_zmvm join buf on 
 st_intersects(buf.geom,manzanas_zmvm.geom)
 group by buf.estacion) as foo;
+
+--EJERCICIO # 1.- En los datos del Censo encontrarás shapes con las calles del DF y del Estado de México. 
+-- Agrega estos shapes como capas en Postgis y repite los pasos 1 a 6 de este archivo para obtener un corte
+-- de las calles con la forma de la ZMVM en una tabla indexada espacialmente y con llave primaria (PK)
+
+-- Para terminar con esta práctica vamos a unir atributos de dos tablas a partir de una relación espacial
+--Es decir, un spatial join. Para esto, primero tienes que subir la capa colonias que está en la carpeta de datos (data)
+-- Asumiremos que ya subimos la capa en una tabla llamada colonias.
+
+--Aquí vamos a crear una tabla que contenga la clave de la manzana (cvegeo), la geometría de la manzana y la clave de la colonia
+--en la que se encuentra la manzana:
+
+select  manzanas_zmvm.gid, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zmvm.geom 
+into manzanas_colonias
+from manzanas_zmvm join colonias on st_intersects(colonias.geom, manzanas_zmvm.geom);

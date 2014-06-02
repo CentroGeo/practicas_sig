@@ -77,5 +77,6 @@ FROM gps_tracks;
 --Ahora pueden visualizar el lago en QGis. PREGUNTA #2: ¿Qué hubiera pasado si no ponemos un nodo en la auto-intersección?
 --Hint: ver en la documentación--> ¿Qué es un polígono?
 
---EJERCICIO # 1 
+--EJERCICIO # 1: Con los puntos de las estaciones del metro de la práctica anterior, crea las líneas del metro.
+--Hint: Para crear todas las líneas tienes que agrupar los puntos
 

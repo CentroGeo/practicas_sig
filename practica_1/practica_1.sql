@@ -60,4 +60,5 @@ into manzanas_colonias
 from manzanas_zmvm join colonias on st_intersects(colonias.geom, manzanas_zmvm.geom);
 
 --EJERCICIO # 2: Crea un índice espacial sobre la geometría y agrega una llave primaria a la tabla que acaqbas de crear.
---EJERCICIO # 3: 
+--EJERCICIO # 3: De la misma forma en que creamos la tabla manzanas_colonias, crea una tabla que una la geometría de las calles con el id de las colonias
+--recuerda crear su propio índice espacial y llave primaria.

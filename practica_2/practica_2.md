@@ -9,11 +9,11 @@ En esta práctica trataremos dos cuestiones fundamentales sobre la representaci�
 Para esta práctica utilizaremos las capas de datos que puedes encontrar en la carpeta 'practica_2/data/' de este repositorio. 
 Recuerda que antes de pasar al archivo sql, debes subir todos los _shapes_ de dicha carpeta a tablas en Postgis, para efectos del resto del instructivo, asumiremos que subiste las capas en una base de datos llamada practicas_sig y en el esquema practica_2, como se ve en el siguiente esquema:
 
-*practicas_sig
-	*practica_1
-		*tablas...
-	*practica_2
-		*tablas...
+	+practicas_sig
+		+practica_1
+			+tablas...
+		+practica_2
+			+tablas...
 
 Ejercicios		
 =============

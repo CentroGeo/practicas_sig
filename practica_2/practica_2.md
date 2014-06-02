@@ -18,9 +18,9 @@ Recuerda que antes de pasar al archivo sql, debes subir todos los _shapes_ de di
 Ejercicios		
 =============
 
-1. En el primer ejercicio vamos construir un polígono a partir de una serie de puntos (tomados con un GPS). 
+1. En el primer ejercicio vamos construir un polígono a partir de una serie de puntos (tomados con un GPS). Una vez que tengas tus tablas en una base de datos, puedes proseguir al archivo practica_2_Ej_1.sql
 
-Una vez que tengas tus tablas en una base de datos, puedes proseguir al archivo practica_2.sql
+2. En el segundo Ejercicio de la práctica vamos a explorar las relaciones espaciales entre diferentes objetos en PostGis. Todo los que necesitas para esta práctica lo encuentras en el archivo practica_2_Ej_2.sql
 
 
 

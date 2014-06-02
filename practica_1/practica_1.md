@@ -29,4 +29,4 @@ Ahora vamos a agregar la capa de manzanas del Estado de México pero en lugar de
   
   Pues hemos terminado de subir los datos para la práctica 1, ahora podemos proceder a hacer las consultas y a la diversión de Postgis. Ten en cuenta que para ejecutar las consultas y visualizarlas necesitas algun cliente para la base de datos [PGAdmin III](http://www.pgadmin.org/) provee una interfaz amigable para administrar las bases de datos y hacer consultas pero no puedes visualizar capas geográficas. [QGis](http://www.qgis.org/en/site/), provee algunas funcionalidades de consulta y administración y además permite visulizar y analizar información geográfica.
 
- Ahora puedes continuar con el código de [practica_1.sql](https://github.com/plablo09/practicas_sig/blob/master/practica_1.sql)
+ Ahora puedes continuar con el código de [practica_1.sql](https://github.com/plablo09/practicas_sig/blob/master/practica_1/practica_1.sql)

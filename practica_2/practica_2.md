@@ -18,10 +18,12 @@ Recuerda que antes de pasar al archivo sql, debes subir todos los _shapes_ de di
 Ejercicios		
 =============
 
-1. En el primer ejercicio vamos construir un polígono a partir de una serie de puntos (tomados con un GPS). Una vez que tengas tus tablas en una base de datos, puedes proseguir al archivo practica_2_Ej_1.sql
+1. En el primer ejercicio vamos construir un polígono a partir de una serie de puntos (tomados con un GPS). Una vez que tengas tus tablas en una base de datos, puedes proseguir al archivo 'practica_2_Ej_1.sql'
 
-2. En el segundo Ejercicio de la práctica vamos a explorar las relaciones espaciales entre diferentes objetos en PostGis. Todo los que necesitas para esta práctica lo encuentras en el archivo practica_2_Ej_2.sql
+2. En el segundo Ejercicio de la práctica vamos a explorar las relaciones espaciales entre diferentes objetos en PostGis, en particular el modelo DE9IM (Dimensionally Extended 9-Intersection Model)  Todo los que necesitas para esta práctica lo encuentras en el archivo 'practica_2_Ej_2.sql'
 
+El ejemplo para el segundo ejercicio lo tomé directamente del que se puede encontrar en el sitio de Boundless, dejo aquí la liga como referencia:
+[Dimensionally Extended 9-Intersection Model](http://workshops.boundlessgeo.com/postgis-intro/de9im.html)
 
 
 Referencia

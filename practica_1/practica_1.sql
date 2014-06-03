@@ -48,8 +48,8 @@ group by buf.estacion) as foo;
 -- Agrega estos shapes como capas en Postgis y repite los pasos 1 a 6 de este archivo para obtener un corte
 -- de las calles con la forma de la ZMVM en una tabla indexada espacialmente y con llave primaria (PK)
 
--- Para terminar con esta práctica vamos a unir atributos de dos tablas a partir de una relación espacial
---Es decir, un spatial join. Para esto, primero tienes que subir la capa colonias que está en la carpeta de datos (data)
+-- Ahora  vamos a unir atributos de dos tablas a partir de una relación espacial
+-- Es decir, un spatial join. Para esto, primero tienes que subir la capa colonias que está en la carpeta de datos (data).
 -- Asumiremos que ya subimos la capa en una tabla llamada colonias.
 
 --(9) Aquí vamos a crear una tabla que contenga la clave de la manzana (cvegeo), la geometría de la manzana y la clave de la colonia
@@ -59,6 +59,14 @@ select  manzanas_zmvm.gid, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zm
 into manzanas_colonias
 from manzanas_zmvm join colonias on st_intersects(colonias.geom, manzanas_zmvm.geom);
 
---EJERCICIO # 2: Crea un índice espacial sobre la geometría y agrega una llave primaria a la tabla que acaqbas de crear.
+--EJERCICIO # 2: Crea un índice espacial sobre la geometría y agrega una llave primaria a la tabla que acabas de crear.
 --EJERCICIO # 3: De la misma forma en que creamos la tabla manzanas_colonias, crea una tabla que una la geometría de las calles con el id de las colonias
 --recuerda crear su propio índice espacial y llave primaria.
+
+-- Finalmente, para entender algunas de las diferencias entre Arc y el modelo PostGis, agregaremos las manzanas en colonias a través del id de colonia,
+-- lo que en Arc se conoce como 'dissolve'.
+
+select st_union(geom), id_colonia
+from manzanas_colonias
+group by id_colonia;
+

@@ -66,7 +66,8 @@ from manzanas_zmvm join colonias on st_intersects(colonias.geom, manzanas_zmvm.g
 -- Finalmente, para entender algunas de las diferencias entre Arc y el modelo PostGis, agregaremos las manzanas en colonias a través del id de colonia,
 -- lo que en Arc se conoce como 'dissolve'.
 
-select st_union(geom), id_colonia
+select st_union(geom), id_colonia into manzanas_union
 from manzanas_colonias
 group by id_colonia;
 
+-- PREGUNTA #1 ¿Qué tipo de geometría obtenemos?

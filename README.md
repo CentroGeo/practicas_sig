@@ -13,7 +13,7 @@ Nota: en principio, toda la información del censo es libre, gratis y está disp
 
 Por supuesto puedes agradecerle a Diego por su esfuerzo e incluso donarle algunos pesos en su sitio: [Diego Valle-Jones](http://www.diegovalle.net/).
 
-Una vez que hallas obtenido los datos del censo, abre el archivo [práctica_1](https://github.com/plablo09/practicas_sig/blob/master/practica_1.md) (en este mismo repositorio) y sigue las instrucciones.
+Una vez que hallas obtenido los datos del censo, ve a la carpeta practica_1 (en este mismo repositorio) y sigue las instrucciones.
 
 Finalmente, para todas las prácticas usaremos el manejador de bases de datos Postgres con la extensión espacial Postgis. Si tienes dudas sobre la instalación,
 puedes consultar los siguientes sitios:

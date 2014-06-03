@@ -44,3 +44,15 @@ INSERT INTO practica_2.lineas (geom)
 SELECT practica_2.lineas.*
 FROM practica_2.lineas JOIN practica_2.poligonos ON ST_Intersects(practica_2.lineas.geom, practica_2.poligonos.geom)
 WHERE ST_Relate(practica_2.lineas.geom, practica_2.poligonos.geom, '1FF00F212');
+
+-- El ejercicio final de ésta práctica consiste en extraer, a partir de las líneas de metro que creamos, las estaciones de conexión
+-- y las estaciones terminales de cada linea. Para esto, el único operador nuevo que necesitan es st_crosses(geom1,geom2) que
+-- nos dice si una geometría 'atraviesa' a otra.
+
+--Para ilustrar esto regresemos a las tablas de líneas y polígonos que usamos en este ejercicio. 
+-- Vamos a preguntar si la linea con id=4 crusa el polígono:
+select st_crosses(practica_2.lineas.geom,practica_2.poligonos.geom)
+from practica_2.lineas, practica_2.poligonos
+where practica_2.lineas.id =4 and practica_2.poligonos.id =1;
+--El resultado es False, no la cruza. Ahora cambiemos la linea por la de id 5, esa si la cruza.
+-- ¿Qué pasa si utilizamos la línea con id 1, que toca al polígono?

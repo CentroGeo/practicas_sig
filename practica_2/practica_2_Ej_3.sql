@@ -18,7 +18,7 @@ using st_geometryN(geom,1);
 
 --Primero vamos a crear una tabla con los anillos exteriores de los polígonos:
 
-create table practica_2.poligonos_lineas as
+create table practica_2.anillos_poligonos as
 select collection,element,st_exteriorring(geom) as geom 
 from practica_2.poligonos_intersecciones;
 --Visualiza la tabla en QGis y checa que sólo nos quedamos con la frontera de los polígonos.

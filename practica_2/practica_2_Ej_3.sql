@@ -16,12 +16,6 @@ using st_geometryN(geom,1);
 --Ahora sí los polígonos son ya "single part" (chécalo), agreguemoslos colectados en una nueva tabla:
 
 
----TENGO que checar bien, pero aquí está el camino:
-select row_number() OVER () as rnum, st_union(st_exteriorring(geom)) as geom 
-from practica_2.poligonos_intersecciones  
-group by collection; 
-
-
 --Primero vamos a crear una tabla con los anillos exteriores de los polígonos:
 
 create table practica_2.poligonos_lineas as

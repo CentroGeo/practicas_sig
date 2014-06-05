@@ -68,11 +68,11 @@ FROM (
 alter table practica_2.waypoints_nuevos add column gid serial;
 
 --Como podemos ver, creamos un punto el la auto-intersección. Ahora regresemos a la tabla gps_tracks y creemos un polígono:
-CREATE TABLE gps_lakes AS
+CREATE TABLE practica_2.gps_lakes AS
 SELECT
-ST_BuildArea(the_geom) AS lake,
+ST_BuildArea(geom) AS lake,
 track_id
-FROM gps_tracks;
+FROM practica_2.gps_tracks;
 
 --Ahora pueden visualizar el lago en QGis. PREGUNTA #2: ¿Qué hubiera pasado si no ponemos un nodo en la auto-intersección?
 --Hint: ver en la documentación--> ¿Qué es un polígono?

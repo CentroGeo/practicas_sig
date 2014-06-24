@@ -1,4 +1,4 @@
-Práctica 3 Análisis de redes con pg_routing
+Práctica 3 Análisis de redes con pgrouting
 =========
 
 En el primer ejercicio vamos a utilizar la extensión pgrouting para crear una
@@ -30,3 +30,9 @@ ALTER TABLE practica_3.calles_zmvm ADD COLUMN target integer;
 ````
 
 Ahora estamos listos para proceder a los ejercicios, abre el archivo practica_3.sql
+
+
+##Preguntas
+
++ Explica las diferencias entre los algoritmos de Dijkstra y A*
++ Bajo qué condiciones recomendarías usar uno u otro algoritmo.

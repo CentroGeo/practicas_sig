@@ -97,7 +97,7 @@ SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_astar('
                          reverse_cost,
                          x1, y1, x2, y2
                         FROM practica_3.calles_zmvm',
-                300032, 300032, true, true);
+                300032, 241417, true, true);
 
 --Jueguen con los dos algoritmos, comparen tiempos de ejecución para diferentes
 --parejas de nodos.

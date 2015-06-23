@@ -1,22 +1,29 @@
 -- (1) El primer paso es proyectar las geometrías de las manzanas para que sean compatibles con las estaciones del metro y el límite metropolitano
 -- Es mejor proyectar las manzanas para que todo está en coordenadas planas, de ese modo los cálculos geométricos son mucho más rápidos
 
- ALTER TABLE manzanas_zmvm 
-   ALTER COLUMN geom 
-   TYPE Geometry(Polygon, 32614) 
+ ALTER TABLE merge_manzanas
+   ALTER COLUMN geom
+   TYPE Geometry(Polygon, 32614)
    USING ST_Transform(geom, 32614);
 
--- (2) Ahora vamos a cortar las manzanas con el polígono del límite metropolitano (lo que se llama un clip, pues) y meter el resultado en la tabla manzanas_zmvm:
-select manzanas.* into manzanas_zmvm from manzanas 
+--Repite la misma operación para todas las capas que estén en coordenadas geográficas (SRID: 4326)
+
+-- (2) Ahora vamos a cortar las manzanas con el polígono del límite metropolitano (lo que se llama un clip, pues) y meter el resultado en la tabla  merge_manzanas:
+create table manzanas_zmv as(
+select merge_manzanas.*
+from merge_manzanas
 inner join limite_metropolitano on
-st_intersects(limite_metropolitano.geom,manzanas.geom);
+st_intersects(limite_metropolitano.geom,merge_manzanas.geom)
+)
 --Nota como lo que hicimos fue en realidad un inner join pero como condición utilizamos una relación espacial: st_intersects
 
 -- (3) creamos un índice espacial sobre la geometría
+-- TAREA: investiga qué son y para qué sirven los índices espaciales
 create index manzanas_zmvm_gix on manzanas_zmvm using GIST(geom);
 
 -- (4) vemos si los gid son únicos
 select count(*) from manzanas_zmvm  group by gid order by count(*) desc;
+-- ¿Por qué no son únicos los gids?
 
 -- (5) como la tabla tiene unos gid's repetidos, alteramos la columna para que sean únicos
 CREATE SEQUENCE "manzanas_zmvm_gid_seq";
@@ -32,7 +39,7 @@ ALTER TABLE manzanas_zmvm ADD PRIMARY KEY ("gid");
 --¿cuantas manzanas quedan a 500 metros de cada estación del metro?
 select foo.* from
 (with buf as (select st_buffer(estaciones_metro.geom,500.0) as geom , estaciones_metro.nombreesta as estacion from estaciones_metro)
-select count(manzanas_zmvm.gid), buf.estacion from manzanas_zmvm join buf on 
+select count(manzanas_zmvm.gid), buf.estacion from manzanas_zmvm join buf on
 st_intersects(buf.geom,manzanas_zmvm.geom)
 group by buf.estacion) as foo;
 
@@ -40,13 +47,18 @@ group by buf.estacion) as foo;
 --Nota: La columna pob1 contiene la población de cada manzana
 select foo.* from
 (with buf as (select st_buffer(estaciones_metro.geom,500.0) as geom , estaciones_metro.nombreesta as estacion from estaciones_metro)
-select sum(manzanas_zmvm.pob1), buf.estacion from manzanas_zmvm join buf on 
+select sum(manzanas_zmvm.pob1), buf.estacion from manzanas_zmvm join buf on
 st_intersects(buf.geom,manzanas_zmvm.geom)
 group by buf.estacion) as foo;
 
---EJERCICIO # 1.- En los datos del Censo encontrarás shapes con las calles del DF y del Estado de México. 
+--PUNTO EXTRA: ¿Cuántas personas no viven a 500 metros de una estación de metro?
+--Hint: Tienes que sumar el resultado de la expresión de arriba y restarla de la población total
+--como es el primer quiz, puedes hacerlo en dos querys
+
+--EJERCICIO # 1.- En los datos del Censo encontrarás shapes con las calles del DF y del Estado de México, así como de las
+--AGEBS.
 -- Agrega estos shapes como capas en Postgis y repite los pasos 1 a 6 de este archivo para obtener un corte
--- de las calles con la forma de la ZMVM en una tabla indexada espacialmente y con llave primaria (PK)
+-- de las calles y de las AGEBS con la forma de la ZMVM en una tabla indexada espacialmente y con llave primaria (PK)
 
 -- Ahora  vamos a unir atributos de dos tablas a partir de una relación espacial
 -- Es decir, un spatial join. Para esto, primero tienes que subir la capa colonias que está en la carpeta de datos (data).
@@ -55,7 +67,7 @@ group by buf.estacion) as foo;
 --(9) Aquí vamos a crear una tabla que contenga la clave de la manzana (cvegeo), la geometría de la manzana y la clave de la colonia
 --en la que se encuentra la manzana:
 
-select  manzanas_zmvm.gid, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zmvm.geom 
+select  manzanas_zmvm.gid, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zmvm.geom
 into manzanas_colonias
 from manzanas_zmvm join colonias on st_intersects(colonias.geom, manzanas_zmvm.geom);
 

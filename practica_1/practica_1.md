@@ -32,7 +32,7 @@ Ahora vamos a agregar la capa de manzanas del Estado de México pero en lugar de
 
   Pues hemos terminado de subir los datos para la práctica 1, ahora podemos proceder a hacer las consultas y a la diversión de Postgis. Ten en cuenta que para ejecutar las consultas y visualizarlas necesitas algun cliente para la base de datos [PGAdmin III](http://www.pgadmin.org/) provee una interfaz amigable para administrar las bases de datos y hacer consultas pero no puedes visualizar capas geográficas. [QGis](http://www.qgis.org/en/site/), provee algunas funcionalidades de consulta y administración y además permite visulizar y analizar información geográfica.
 
-  ##Parte 1 Consultas básicas.
+  ## Parte 1 Consultas básicas.
 
   Lo primero que vamos a hacer es proyectar las geometrías de las manzanas para que sean compatibles con las estaciones del metro y el límite metropolitano.
   Es mejor proyectar las manzanas para que todo está en coordenadas planas, de ese modo los cálculos geométricos son mucho más rápidos:
@@ -118,7 +118,7 @@ Ahora vamos a agregar la capa de manzanas del Estado de México pero en lugar de
 
   __EJERCICIO # 1.__- En los datos del Censo encontrarás shapes con las calles del DF y del Estado de México, así como de las AGEBS. Agrega estos shapes como capas en Postgis y repite los pasos 1 a 6 de este archivo para obtener un corte de las calles y de las AGEBS con la forma de la ZMVM en tablas indexadas espacialmente y con llave primaria (PK)
 
-  ##Parte 2. Un ejercicio
+  ## Parte 2. Un ejercicio
 
   Lo que vamos a hacer en esta parte de la práctica es completar todo un flujo de trabajo para obtener mapas de cantidad y densidad de población de habitantes por colonia.
 

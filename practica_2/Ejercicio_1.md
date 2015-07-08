@@ -1,12 +1,10 @@
-Primitivos espaciales; armando y desarmando; relaciones espaciales.
+Primitivos espaciales; armando y desarmando.
 =============
 
-En esta práctica trataremos dos cuestiones fundamentales sobre la representación en base de datos de información geoespacial:
-1. Los primitivos espaciales (puntos, lineas y polígonos) y sus tipos agregados
-2. Las relaciones espaciales
+En este primer ejercicio vamos a estudiar la forma en la que se construye la estructura jerárquica de los objetos geométricos en una base de datos.
 
 Para esta práctica utilizaremos las capas de datos que puedes encontrar en la carpeta `practica_2/data/` de este repositorio.
-Recuerda que antes de comenzar debes subir todos los _shapes_ de dicha carpeta a tablas en Postgis, para efectos del resto del instructivo, asumiremos que subiste las capas en una base de datos llamada practicas_sig y en el esquema practica_2, como se ve en el siguiente esquema:
+Recuerda que antes de comenzar debes subir todos los _shapes_ de dicha carpeta a tablas en Postgis, para efectos del resto del instructivo, asumiremos que subiste las capas en una base de datos llamada practicas_sig y en el esquema practica_2, como se ve en el siguiente diagrama:
 
 	+practicas_sig
 		+practica_1
@@ -14,10 +12,8 @@ Recuerda que antes de comenzar debes subir todos los _shapes_ de dicha carpeta a
 		+practica_2
 			+tablas...
 
-Ejercicios
+Ejercicio
 =============
-
-## Ejercicio 1
 
 En este ejercicio vamos a construir un polígono a partir de una serie de puntos (tomados con un GPS).
 
@@ -48,7 +44,7 @@ Si visualizas la capa en QGis, notarás que la linea que construimos contiene un
 	UPDATE practica_2.gps_tracks
 	SET geom = ST_UnaryUnion(geom)
 ```
-El operador espacial `ST_Union()` de PostGis, regresa la unión del conjunto de puntos de una collección de geometrías (`ST_UnaryUnion()` es una extensión para unir una geometría consigo misma). En otras palabras, la unión en PostGis regresa un conjunto de geometrías sólo se tocan en puntos (compara este concepto de unión con la unión geométrica en Arc). Veamos qué tipo de geometría tenemos ahora:
+El operador espacial `ST_Union()` regresa la unión del conjunto de puntos de una collección de geometrías (`ST_UnaryUnion()` es una extensión para unir una geometría consigo misma). En otras palabras, la unión en PostGis regresa un conjunto de geometrías sólo se tocan en puntos (compara este concepto de unión con la unión geométrica en Arc). Veamos qué tipo de geometría tenemos ahora:
 
 ``` sql
 	SELECT ST_asText(geom) from practica_2.gps_tracks;

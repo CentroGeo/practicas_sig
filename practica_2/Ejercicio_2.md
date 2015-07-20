@@ -41,7 +41,13 @@ FROM lineas, poligonos
 
 ```
 
-Como pueden ver, el resultado es la matriz de interacción para cada línea con el polígono. Ahora, seleccionemos sólo las líneas que cumplen con el patrón que buscamos (¿cuál es ese patrón?):
+El resultado, como ya dijimos, es la representación _plana_ de la matriz de interacción para cada línea con el polígono. Ahora, seleccionemos sólo las líneas que cumplen con el patrón que buscamos (¿cuál es ese patrón?). Para eso vamos a usar una versión de `St_Relate` que admite un tercer argumento: un _string_ que representa el patrón de relación, en esta versión `St_Relate` regresa verdadero o falso dependiendo de si las geometrías cumplen o no con el patrón especificado, veamos:
+
+```sql
+SELECT lineas.id as l_id, poligonos.id as p_id, ST_Relate(lineas.geom, poligonos.geom, '1FF00F212')
+FROM lineas, poligonos;
+```
+Ahora vamos a usar este resultado para seleccionar las líneas que cimplen la condición que buscamos:
 
 ```sql
 
@@ -50,7 +56,7 @@ FROM lineas, poligonos
 WHERE ST_Relate(lineas.geom, poligonos.geom, '1FF00F212');
 
 ```
-Ya como última nota, si quisieramos hacer esto mismo, sobre tabloas muy grandes, podemos hecr un query mucho más eficiente de la siguiente manera:
+Ya como última nota, si quisieramos repetir esto mismo, sobre tablas muy grandes, podemos hacer un query mucho más eficiente de la siguiente manera:
 
 ```sql
 

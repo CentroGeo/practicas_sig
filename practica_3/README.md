@@ -15,49 +15,11 @@ Si la consulta no regresa ningún error, la extensión quedó instalada correcta
 
 ## Parte I: preparación de los datos
 
-
-Para esta práctica vamos a crear una base de datos nueva, por ejemplo, `practica_3`. No es necesario que habilites la extensión PostGis, los datos los vamos a recuperar de un respaldo. Sigue las instrucciones del profesor para restaurar la base de datos a partir del archivo `practica_3.backup`. Si el proceso no regresa error, entonces ya tienes todo listo!
-
-Como puedes ver, la base de datos contiene una tabla que se llama calles, ábrela en Qgis y examínala.
-
-Una cosa interesante es que tenemos líneas que no representan calles, sino líneas de metro, ferrocarril, andadores peatonales, etc. Entonces, pensando en crear rutas para automóviles, es necesario remover dichás líneas. Primero identifiquemos las cosas que queremos eliminar:
-
-````sql
-select distinct type from calles;
-````
-
-Esto nos regresa los diferentes tipos de segmentos y a partir de allí podemos hacer una selección de lo que no nos interesa:
-
-````sql
-select distinct type from calles;
-````
-
-Para ver una selección particular de tipos ejecuta:
-
-````sql
-select * from calles
-where type in ('cycleway','monorail');
-````
-
-sustituyendo por los tipos que te parezca que debemos conservar.
-
-Antes de borrar datos de la tabla de calles, creemos una copia para conservar los datos originales:
-
-````sql
-create table calles_completa as table calles;
-````
-
-Ahora sí, vamos a borrar las calles que no nos interesan (haz tu propia selección, la puedes ir viendo poco a poco para decidir):
-
-````sql
-delete from calles
-where type not in ('primary','secondary','motorway','tertiary','tertiary link','motorway link',
-                'secondary link', 'primary link','living street','residential','road')
-````
+Lo primero que tenemos que hacer es, como siempre, subir nuestro _shape_ a la base de datos. Los datos que vamos a usar están en el archivo `red_utm.shp`. Súbelos en una table que se llame _calles_
 
 ##Parte II: Creación de la topología y pesos
 
-Una vez que tenemos sólo las calles que nos interesan, vamos a usar pgrouting para crear la topología de red sobre las calles. Lo primero que necesitamos es agregar dos campos para almacenar los nodos de orígen y destino de cada segmento:
+Una vez que tenemos las calles que nos interesan, vamos a usar pgrouting para crear la topología de red sobre las calles. Lo primero que necesitamos es agregar dos campos para almacenar los nodos de orígen y destino de cada segmento:
 
 ````sql
 alter table calles add column source integer;
@@ -77,38 +39,78 @@ En nuestro caso:
 select pgr_createTopology('calles', 0.0001, 'geom', 'gid');
 ````
 
-Como pueden ver, esta función crea la tabla `calles_vertices_pgr`, idealmente esta tabla contiene todos los nodos de la red, examínenla en Qgis. Como pueden ver, aún faltan nodos en algunas intersecciones, la razón es que la geometría de las calles es de tipo MultiLinestring, es decir, es una colección de líneas (piensen en qué sentido tiene calcular inicio y fin sobre una colección), entonces vamos a tratar de convertir las geometrías a linestring simple, para poder poner nodos en las intersecciones. Primero creamos otra copia, para no romper la original:
+Como pueden ver, esta función crea la tabla `calles_vertices_pgr`, idealmente esta tabla contiene todos los nodos de la red, examínenla en Qgis.
+
+Ahora, vamos a asignar algunos pesos a las calles, para eso podemos usar (igual que en la práctica de redes de Análisis Espacial), la categoría vial y estimar una velocidad promedio de recorrido a partir de eso. Primero agregamos las columnas que nos faltan:
 
 ````sql
-create table calles_prueba as table calles;
+alter table calles add column speed float;
+alter table calles add column cost float;
 ````
 
-Luego cambiamos el tipo de geometría:
+Ahora vamos a popular los valores de _speed_ utilizando la columna _catvial_ (esto es un ejemplo, fíjate a qué tipo de calle corresponde cada categoría y pon un valor razonable):
 
 ````sql
-ALTER TABLE calles_prueba
-  ALTER COLUMN geom
-  TYPE Geometry(Linestring, 32614)
-  USING st_geometryn(geom, 1)
+update calles set speed =
+case when catvial = 'CUARTO ORDEN' then 10
+ when catvial = 'TERCER ORDEN' then 20
+ when catvial = 'SEGUNDO ORDEN' then 30
+ when catvial = 'PRIMER ORDEN' then 50
+ else null end
 ````
 
-Observen en Qgis si perdimos algún segmento.
-
-Como no se modifica nada, entonces podemos trabajar sobre esta tabla, intentemos crear la topología nuevamente:
+Ahora podemos calcular la columna costo usando el tiempo de viaje:
 
 ````sql
-select pgr_createTopology('calles_prueba', 0.0001, 'geom', 'gid');
+update red_calles_utm set cost = ((st_length(geom)/1000)/speed)*(60)
 ````
 
-eso se puede deber a que la geometría no está creada adecuadamente, es necesario asegurarnos de que cada intersección tenga un nodo, para esto podemos usar la función (pgr_nodeNetwork)[http://docs.pgrouting.org/dev/src/common/doc/functions/node_network.html#pgr-node-network]:
+Finalmente, para terminar esta parte del ejercicio, vamos a calcular una ruta usando dos algoritmos diferentes, primero vamos a usar [Dijkstra] (http://docs.pgrouting.org/2.0/en/src/dijkstra/doc/index.html#pgr-dijkstra):
 
-SELECT * FROM pgr_nodeNetwork('calles', 0.000001, 'gid', 'geom', 'calles_noded');
+````sql
+select c.gid, c.geom from calles c,
+ (SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_dijkstra('
+                SELECT gid AS id,
+                         source::integer,
+                         target::integer,
+                         cost::double precision AS cost
+                        FROM calles',
+                300032, 241417, true, true)) as ruta
+where c.gid = ruta.edge
+````
 
+Ahora vamos a utilizar  A*, para este algoritmo (heurístico), necesitamos agregar cuatro nuevas columnas y popularlas:
+
+````sql
 ALTER TABLE calles
-  ALTER COLUMN geom
-  TYPE Geometry(Linestring, 32614)
-  USING st_geometryn(geom, 1)
+ADD COLUMN x1 double precision,
+ADD COLUMN y1 double precision,
+ADD COLUMN x2 double precision,
+ADD COLUMN y2 double precision;
 
+UPDATE calles SET
+x1 = ST_X(ST_startPoint(ST_GeometryN(geom,1))),
+y1 = ST_Y(ST_startPoint(ST_GeometryN(geom,1))),
+x2 = st_x(st_endpoint(ST_GeometryN(geom,1))),
+y2 = st_y(st_endpoint(ST_GeometryN(geom,1)));
+````
+
+Ahora sí, podemos utilizar el algoritmo A*:
+
+````sql
+select c.gid, c.geom from calles c,
+(SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_astar('
+                SELECT gid AS id,
+                         source::integer,
+                         target::integer,
+                         cost::double precision AS cost,
+                         x1, y1, x2, y2
+                        FROM calles',
+                162867, 163952, true, false)
+) as ruta
+where c.gid = ruta.edge
+````
+Jueguen un rato con los nodos de inicio y fin, con lo algoritmos de rutas, investiguen y, finalmente, intenten contestar las siguientes preguntas:
 
 ##Preguntas
 

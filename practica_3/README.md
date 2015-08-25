@@ -116,3 +116,74 @@ Jueguen un rato con los nodos de inicio y fin, con lo algoritmos de rutas, inves
 
 + Explica las diferencias entre los algoritmos de Dijkstra y A*
 + Bajo qué condiciones recomendarías usar uno u otro algoritmo.
+
+
+# Segundo ejercicio: Trabajando con redes más reales
+
+En esta parte de la práctica, vamos a utilizar una red de calles extraida de [OpenStreetMap](https://www.openstreetmap.org/), estos son datos contribuidos por usuarios, una especie de wikipedia para cartografía digital. Una ventaja de OSM es que desde un principio fue pensado como una fuente de datos para calcular rutas de modo que su estructura permite construir una red topológica de manera natural (porsuspuesto, tiene la desventaga de ser (VGI)[https://en.wikipedia.org/wiki/Volunteered_geographic_information], lo que nos puede hacer dudar de su precisión, validez, etc.).
+
+El proceso para importar la red de OSM a postgres es demasiado largo como para hacerlo en el taller, entonces trabajaremos a partir de un respaldo de una base preparada con anticipación. De cualquier modo, si te interesa cómo utilizar los datos de OSM en pgrouting, el proceso involucra dos etapas:
+
+1. Obtener los datos de la zona de interés, directamente de la página de [OSM](https://www.openstreetmap.org/) o bien de algún servicio de agregación como los extractos metropolitanos de [Mapzen](https://mapzen.com/data/metro-extracts)
+2. Importar los datos a postgres y crear la topología. Para esto puedes utilizar [osm2pgrouting](http://pgrouting.org/docs/tools/osm2pgrouting.html) (que es libre, aunque hay que compilarlo y puede resultar algo complicado) o [osm2po](http://osm2po.de/) (que no es libre pero es gratuito)
+
+Para importar los datos de esta práctica necesitas crear una nueva base de datos, digamos, `red_osm`. No es necesario que le agregues las extensiones de PostGis y pgrouting, el respaldo ya las incluye (claro, sólo si están ya instaladas en el servidor). Una vez que hayas creado la base de datos puedes, desde pgAdmin, dar botón derecho y seleccionar la opción "Restaurar", navega hasta el archivo `osm_mex.backup` y selecciónalo. Listo! tenemos una base de datos lista para trabajar.
+
+La base de datos que acabamos de crear tiene la siguiente estructura:
+
+````
+Schema |           Name           |   Type   | Owner
+--------+--------------------------+----------+-------
+public | classes                  | table    | user
+public | nodes                    | table    | user
+public | relation_ways            | table    | user
+public | relations                | table    | user
+public | types                    | table    | user
+public | way_tag                  | table    | user
+public | ways                     | table    | user
+public | ways_car                 | table    | user
+public | ways_vertices_pgr        | table    | user
+
+````
+las tablas `ways` y `ways_vertices_pgr` son las que contienen los segmentos y los nodos respectivamente. Dentro de la tabla `ways` vas a encontrar las columnas `source` y `target` cuyo significado ya debes de conocer bien. Además puedes notar que hay una columna llamada `r_cost`, esta representa el costo de recorrer la calle en sentido contrario (sí, esta red tiene los sentidos de la calle bien hechos!). La columna `to_cost`, que viene vacía sirve para que nosotros almacenemos un costo por defecto para la red.  
+
+Ahora bien, la red que importamos desde OSM contiene segmentos que no corresponden a calles (ríos, canales, etc.) o bien segmentos por donde no pueden circular automóviles, entonces, para el primer ejercicio vamos a utilizar la tabla `ways_car` que es un extracto de `ways` que contiene sólo los segmentos que corresponden a calles por donde pueden circular automóviles.
+
+Para ir agarrando familiaridad con la red, calculemos una ruta usando los algoritmos que ya conocemos:
+
+### Dijkstra:
+
+````sql
+select c.gid, c.the_geom from ways_car c,
+ (SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_dijkstra('
+                SELECT gid AS id,
+                         source::integer,
+                         target::integer,
+                         st_length(the_geom)::double precision AS cost,
+												 reverse_cost::double precision AS reverse_cost
+                        FROM ways_car',
+                36128, 16543, false, true)) as ruta
+where c.gid = ruta.edge
+````
+
+### A*:
+
+````sql
+select c.gid, c.the_geom from ways_car c,
+ (SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_astar('
+                SELECT gid AS id,
+                         source::integer,
+                         target::integer,
+                         st_length(the_geom)::double precision AS cost,
+												 reverse_cost::double precision AS reverse_cost,
+											   x1, y1, x2, y2
+                        FROM ways_car',
+                36128, 16543, false, true)) as ruta
+where c.gid = ruta.edge
+````
+
+Como puedes ver, hay dos diferencias con lo que hicimos el ejercicio anterior:
+
+1. En lugar de pasarle una columna como costo, estamos pasando un query como costo (`st_length(the_geom)::double precision AS cost`), esta es una de las grandes ventajas de pgrouting, podemos usar cualquier cosa como costo sin necesidad de recalcular la red.
+
+2. Estamos usando la columna reverse_cost

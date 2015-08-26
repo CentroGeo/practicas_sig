@@ -120,16 +120,16 @@ Jueguen un rato con los nodos de inicio y fin, con lo algoritmos de rutas, inves
 
 # Segundo ejercicio: Trabajando con redes más reales
 
-En esta parte de la práctica, vamos a utilizar una red de calles extraida de [OpenStreetMap](https://www.openstreetmap.org/), estos son datos contribuidos por usuarios, una especie de wikipedia para cartografía digital. Una ventaja de OSM es que desde un principio fue pensado como una fuente de datos para calcular rutas de modo que su estructura permite construir una red topológica de manera natural (porsuspuesto, tiene la desventaga de ser (VGI)[https://en.wikipedia.org/wiki/Volunteered_geographic_information], lo que nos puede hacer dudar de su precisión, validez, etc.).
+En esta parte de la práctica, vamos a utilizar una red de calles extraida de [OpenStreetMap](https://www.openstreetmap.org/), estos son datos contribuidos por usuarios, una especie de wikipedia para cartografía digital. Una ventaja de OSM es que desde un principio fue pensado como una fuente de datos para calcular rutas, de modo que su estructura permite construir una red topológica de manera natural (por suspuesto, tiene la desventaja de ser [VGI](https://en.wikipedia.org/wiki/Volunteered_geographic_information), lo que nos puede hacer dudar de su precisión, validez, etc.).
 
-El proceso para importar la red de OSM a postgres es demasiado largo como para hacerlo en el taller, entonces trabajaremos a partir de un respaldo de una base preparada con anticipación. De cualquier modo, si te interesa cómo utilizar los datos de OSM en pgrouting, el proceso involucra dos etapas:
+El proceso para importar la red de OSM a postgres es demasiado largo como para hacerlo en el taller, entonces trabajaremos a partir de un respaldo de una base preparada con anticipación. De cualquier modo, si te interesa saber cómo utilizar los datos de OSM en pgrouting, el proceso involucra dos etapas:
 
 1. Obtener los datos de la zona de interés, directamente de la página de [OSM](https://www.openstreetmap.org/) o bien de algún servicio de agregación como los extractos metropolitanos de [Mapzen](https://mapzen.com/data/metro-extracts)
 2. Importar los datos a postgres y crear la topología. Para esto puedes utilizar [osm2pgrouting](http://pgrouting.org/docs/tools/osm2pgrouting.html) (que es libre, aunque hay que compilarlo y puede resultar algo complicado) o [osm2po](http://osm2po.de/) (que no es libre pero es gratuito)
 
 Para importar los datos de esta práctica necesitas crear una nueva base de datos, digamos, `red_osm`. No es necesario que le agregues las extensiones de PostGis y pgrouting, el respaldo ya las incluye (claro, sólo si están ya instaladas en el servidor). Una vez que hayas creado la base de datos puedes, desde pgAdmin, dar botón derecho y seleccionar la opción "Restaurar", navega hasta el archivo `osm_mex.backup` y selecciónalo. Listo! tenemos una base de datos lista para trabajar.
 
-La base de datos que acabamos de crear tiene la siguiente estructura:
+La base de datos que acabamos de crear tiene las siguientes tablas:
 
 ````
 Schema |           Name           |   Type   | Owner
@@ -160,9 +160,9 @@ select c.gid, c.the_geom from ways_car c,
                          source::integer,
                          target::integer,
                          st_length(the_geom)::double precision AS cost,
-												 reverse_cost::double precision AS reverse_cost
+                         reverse_cost::double precision AS reverse_cost
                         FROM ways_car',
-                36128, 16543, false, true)) as ruta
+                36198, 2064, false, true)) as ruta
 where c.gid = ruta.edge
 ````
 
@@ -175,15 +175,85 @@ select c.gid, c.the_geom from ways_car c,
                          source::integer,
                          target::integer,
                          st_length(the_geom)::double precision AS cost,
-												 reverse_cost::double precision AS reverse_cost,
-											   x1, y1, x2, y2
+                         reverse_cost::double precision AS reverse_cost,
+                         x1, y1, x2, y2
                         FROM ways_car',
-                36128, 16543, false, true)) as ruta
+                36198, 2064, false, true)) as ruta
 where c.gid = ruta.edge
 ````
 
 Como puedes ver, hay dos diferencias con lo que hicimos el ejercicio anterior:
 
-1. En lugar de pasarle una columna como costo, estamos pasando un query como costo (`st_length(the_geom)::double precision AS cost`), esta es una de las grandes ventajas de pgrouting, podemos usar cualquier cosa como costo sin necesidad de recalcular la red.
+1. En lugar de pasarle una columna como costo, estamos pasando un query como costo (`st_length(the_geom)::double precision AS cost`), esta es una de las grandes ventajas de pgrouting, podemos usar cualquier cosa como costo sin necesidad de recalcular la red (toma eso NetworkAnalyst).
 
-2. Estamos usando la columna reverse_cost
+2. Estamos usando la columna  `reverse_cost` para indicarle al algoritmo cuál es el costo de recorrer el segmento en sentido opuesto. En caso de que la vía sea de un sólo sentido, el costo en reversa es muy alto (usualmente el coso multiplicado por 1000000), para impedir que el algoritmo lo seleccione.
+
+Ahora, vamos a utilizar como costo el tiempo de recorrido asumiendo una velocidad constante para cada tipo de via. Por ejemplo, utilicemos la velocidad máxima para cada segmento como base para calcular el tiempo de recorrido:
+
+````sql
+select (st_length(the_geom::geography)/1000)/maxspeed_forward as tiempo from ways_car limit 100
+````
+Nota: cuando hacemos `st_length(the_geom::geography)` estamos calculando la distancia del segmento sobre el esferoide.
+
+Con la consulta anterior tenemos el tiempo de recorrido (en horas) para cada segmento, ahora, esto lo podemos usar directamente como costo en el algoritmo de ruta:
+
+````sql
+select c.gid, c.the_geom from ways_car c,
+ (SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_astar('
+                SELECT gid AS id,
+                         source::integer,
+                         target::integer,
+                         (st_length(the_geom::geography)/1000)/maxspeed_forward::double precision AS cost,
+                         reverse_cost::double precision AS reverse_cost,
+                         x1, y1, x2, y2
+                        FROM ways_car',
+                36198, 2064, false, true)) as ruta
+where c.gid = ruta.edge
+````
+### Pregunta:
+¿Cuánto tiempo tardamos en llegar?
+
+
+Como pueden ver, la ruta en este caso es igual con ambos costos. Compliquemos las cosas un poco, supongamos que estamos en hora pico y que las velocidades se ven modificadas de la siguiente forma:
+
+* Vialidades primarias: una octava parte del máximo
+* Vialidades secundarias: una cuarta parte del máximo
+* Vialidades menores: la mitad del máximo
+
+Primero vamos a calcular la nueva velocidad máxima para cada tipo de segmento:
+
+````sql
+select class_id,
+   case when class_id in(101,102,103) then maxspeed_forward/8
+   when class_id in(106,107,108) then maxspeed_forward/4
+   else maxspeed_forward/2
+   end
+from ways_car
+````
+Para simplificar las consultas siguientes, vamos a poner estos valores en una nueva columna:
+
+````sql
+alter table ways_car add column velocidad_pico float;
+update ways_car set velocidad_pico =
+    case when class_id in(101,102,103) then maxspeed_forward/8
+    when class_id in(106,107,108) then maxspeed_forward/4
+    else maxspeed_forward/2
+end;
+````
+
+Ahora sí, vamos a calcular la ruta usando las nuevas velocidades (lo único que necesitamos cambiar es la velocidad que vamos a usar):
+
+````sql
+select c.gid, c.the_geom from ways_car c,
+ (SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_astar('
+                SELECT gid AS id,
+                         source::integer,
+                         target::integer,
+                         (st_length(the_geom::geography)/1000)/velocidad_pico::double precision AS cost,
+                         reverse_cost::double precision AS reverse_cost,
+                         x1, y1, x2, y2
+                        FROM ways_car',
+                36198, 2064, false, true)) as ruta
+where c.gid = ruta.edge
+````
+Comparen las dos rutas y los tiempos de traslado en cada caso.

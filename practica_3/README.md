@@ -257,3 +257,44 @@ select c.gid, c.the_geom from ways_car c,
 where c.gid = ruta.edge
 ````
 Comparen las dos rutas y los tiempos de traslado en cada caso.
+
+## Problema del Agente Viajero
+
+Ahora vamos a usar pgrouting para resolver el problema de encontrar el camino óptimo para un repartidor que tiene que visitar varias localizaciones en su ruta y regresar al lugar de origen. Matemáticamente, el problema consiste en encontrar un [ciclo hamiltoniano](https://en.wikipedia.org/wiki/Hamiltonian_path) mínimo en una gráfica dirigida y con pesos.
+
+El primer paso es definir cuales son los lugares por donde debe pasar el agente, para esto vamos a seleccionar un conjunto de nodos de la red que servirán como los _puntos de reparto_ y un nodo que será la _base_ del repartidor.
+
+Para resolver el problema vamos a utilizar el algoritmo [pgr_tsp](http://docs.pgrouting.org/dev/src/tsp/doc/index.html) de pgrouting. Este algoritmo es bastante más complejo y funciona un poco diferente que los que hemos usado, en lugar de regrasarte la ruta entre todos los puntos, regresa el orden en el que estos deben ser visitados de acuerdo a su distancia euclidiana o a una matriz de distancia que nosotros definamos. Idealmente, la matriz de distancia la podríamos construir tomando todas las distancias entre nuestros nodos de interes, calculadas usando Dijkstra, por ejemplo. Sin embargo, para simplificar el problema, vamos a utilizar la versión más simple del algoritmo. De la documentación podemos ver que lo que necesitamos para correr el algoritmo es:
+
+
+* sql: Una consulta que regrese las siguientes columnas:
+  * id:	int4 identificador del vértice
+  * x:	float8 coordenada x
+  * y:	float8 coordenada y
+
+* start_id:	int4 id del punto de inicio
+* end_id:	int4 id del punto final, esta opción es opcional, si es onitida se asume el nodo final es el mismo que el inicial
+
+Entonces, nuestra consulta queda de la siguiente manera:
+
+````sql
+SELECT seq, id1, id2, round(cost::numeric, 2) AS cost
+	   FROM pgr_tsp('select id::int, st_x(the_geom) as x, st_y(the_geom) as y FROM ways_vertices_pgr
+	where id in (36104,2099,26248,25170)', 36104, 25170)
+````
+
+Al ejecutar la consulta, lo que nos regresa es una tabla con la secuencia en la que tenemos que recorrer los nodos y el costo _estimado_ en cada segmento del recorrido. Ahora visualicemos la secuencia:
+
+````sql
+select p.id, orden.seq, p.the_geom
+from
+	(SELECT seq, id1, id2, round(cost::numeric, 2) AS cost
+	   FROM pgr_tsp('select id::int, st_x(the_geom) as x, st_y(the_geom) as y FROM ways_vertices_pgr
+	where id in (36104,2099,26248,25170)', 36104, 25170)) as orden
+join ways_vertices_pgr p
+on p.id = orden.id2
+````
+
+### Ejercicio final:
+
+Como pueden ver, el algoritmo no nos regresa la ruta que debemos seguir, sin embargo es posible obtenerla usando alguno de los algoritmos de ruteo que conocemos. El ejercicio es obtener la ruta completa del circuito y dibujarla en QGIS.

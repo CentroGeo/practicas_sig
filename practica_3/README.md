@@ -122,7 +122,8 @@ UPDATE calles SET
   x1 = ST_X(ST_startPoint(ST_GeometryN(geom,1))),
   y1 = ST_Y(ST_startPoint(ST_GeometryN(geom,1))),
   x2 = st_x(st_endpoint(ST_GeometryN(geom,1))),
-  y2 = st_y(st_endpoint(ST_GeometryN(geom,1))); ````
+  y2 = st_y(st_endpoint(ST_GeometryN(geom,1)));
+````
 
 Ahora sí, podemos utilizar el algoritmo A*:
 
@@ -140,7 +141,8 @@ select c.gid, c.geom from calles c,
         x2,
         y2
       FROM calles', 162867, 163952, true, false) ) as ruta
-where c.gid =ruta.edge ````
+where c.gid =ruta.edge
+````
 
 Jueguen un rato con los nodos de inicio y fin, con lo
 algoritmos de rutas, investiguen y, finalmente, intenten contestar las
@@ -192,7 +194,7 @@ lista para trabajar.
 
 La base de datos que acabamos de crear tiene las siguientes tablas:
 
-````text
+````
   Schema |           Name           |   Type   | Owner
   --------+--------------------------+----------+-------
   public | classes                  | table    | user
@@ -231,7 +233,8 @@ select c.gid, c.the_geom from ways c,
       reverse_cost_s::double precision AS reverse_cost
     FROM ways',
   36198, 2064, directed := false)) as ruta
-where c.gid = ruta.edge ````
+where c.gid = ruta.edge
+````
 
 Antes de usar el siguiente algoritmo, vamos a ver lo que nos regresa
 Dijkstra (antes de unirlo con la geometría):
@@ -249,7 +252,7 @@ SELECT * FROM pgr_dijkstra(
 
 ````
 
-````text
+````
 seq | path_seq |  node  |  edge  |       cost        |     agg_cost     
 -----+----------+--------+--------+-------------------+------------------
   1 |        1 |  36198 |  55424 |  4.54431199114601 |                0
@@ -277,7 +280,9 @@ seq | path_seq |  node  |  edge  |       cost        |     agg_cost
 ````
 
 Como pueden ver nos regresa los ids de los segmentos y nodos que vamos
-atravesando, así como los costos y costos acumumulados. Lo que es importante ver es la columna `path_seq`, que nos permite ordenar los segmentos en caso de que el algoritmo no los regrese ordenados.
+atravesando, así como los costos y costos acumumulados. Lo que es importante
+ver es la columna `path_seq`, que nos permite ordenar los segmentos en caso de
+que el algoritmo no los regrese ordenados.
 
 ### A*:
 
@@ -296,12 +301,19 @@ select c.gid, c.the_geom from ways c,
                        y2
                      FROM ways',
                    36198, 2064, false, true)) as ruta
-where c.gid = ruta.edge ````
+where c.gid = ruta.edge
+````
 
 Como puedes ver, hay dos diferencias con lo que hicimos el ejercicio
 anterior:
 
-1. La función `pgr_dijkstra` la estamos llamando con el argumento `directed := false`, para indicarle que queremos usar la versión no-dirigida de la gráfica, en lugar de pasar los argumentos `false,false`, como en el ejercicio anterior. En principio estas dos formas son equivalentes, pero al llamarlo como en este ejercicio nos aseguramos de usar la última versión de la función.
+1. Estamos llamando a la función `pgr_dijkstra` con el argumento
+`directed := false`, para indicarle que queremos usar la versión no-dirigida
+de la gráfica, en lugar de pasar los argumentos `false,false`, como en el
+ejercicio anterior. En principio estas dos formas son equivalentes,
+pero al llamarlo como en este ejercicio nos aseguramos de usar la última
+ versión de la función
+ ([aquí puedes ver la documentación](http://docs.pgrouting.org/2.2/en/src/dijkstra/doc/pgr_dijkstra.html#pgr-dijkstra)).
 
 2. Estamos usando la columna `reverse_cost` para indicarle al
    algoritmo cuál es el costo de recorrer el segmento en sentido
@@ -326,20 +338,21 @@ para cada segmento, ahora, esto lo podemos usar directamente como
 costo en el algoritmo de ruta:
 
 ````sql
-select c.gid, c.the_geom from ways_car c,
+select c.gid, c.the_geom from ways c,
 (SELECT seq, id1 AS node, id2 AS edge, cost
   FROM pgr_astar(
     'SELECT
       gid AS id,
       source::integer,
-      target::integer,(st_length(the_geom::geography)/1000)/maxspeed_forward::double precision AS cost,
+      target::integer,
+      (st_length(the_geom::geography)/1000)/maxspeed_forward::double precision AS cost,
       reverse_cost::double precision AS reverse_cost,
       x1,
       y1,
       x2,
       y2
-    FROM ways_car',
-  36198, 2064, false, true)) as ruta
+    FROM ways',
+  36198, 2064, true, true)) as ruta
 where c.gid = ruta.edge
 ````
 
@@ -372,7 +385,7 @@ una nueva columna:
 
 ````sql
 alter table ways add column velocidad_pico float;
-update ways_car set velocidad_pico =
+update ways set velocidad_pico =
   case
     when class_id in(101,102,103) then maxspeed_forward/8
     when class_id in(106,107,108) then maxspeed_forward/4
@@ -384,7 +397,7 @@ Ahora sí, vamos a calcular la ruta usando las nuevas velocidades (lo
 único que necesitamos cambiar es la velocidad que vamos a usar):
 
 ````sql
-select c.gid, c.the_geom from ways_car c,
+select c.gid, c.the_geom from ways c,
 (SELECT seq, id1 AS node, id2 AS edge, cost
   FROM pgr_astar(
     'SELECT
@@ -397,8 +410,8 @@ select c.gid, c.the_geom from ways_car c,
       y1,
       x2,
       y2
-    FROM ways_car',
-  36198, 2064, false, true)) as ruta
+    FROM ways',
+  36198, 2064, true, true)) as ruta
   where c.gid = ruta.edge
 ````
 
@@ -433,13 +446,12 @@ simple del algoritmo. De la documentación podemos ver que lo que
 necesitamos para correr el algoritmo es:
 
 
-* sql: Una consulta que regrese las siguientes columnas:
+  * sql: Una consulta que regrese las siguientes columnas:
   * id: int4 identificador del vértice
   * x: float8 coordenada x
   * y: float8 coordenada y
-
-* start_id: int4 id del punto de inicio
-* end_id: int4 id del punto final, esta opción es opcional, si es
+  * start_id: int4 id del punto de inicio
+  * end_id: int4 id del punto final, esta opción es opcional, si es
   onitida se asume el nodo final es el mismo que el inicial
 
 Entonces, nuestra consulta queda de la siguiente manera:
@@ -467,7 +479,8 @@ secuencia:
      FROM ways_vertices_pgr where
      id in (36104,2099,26248,25170)', 36104, 25170)) as orden
   join ways_vertices_pgr p
-  on p.id = orden.id2 ````
+  on p.id = orden.id2
+````
 
 ### Ejercicio final:
 

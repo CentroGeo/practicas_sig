@@ -340,7 +340,8 @@ select c.gid, c.the_geom from ways_car c,
       y2
     FROM ways_car',
   36198, 2064, false, true)) as ruta
-where c.gid = ruta.edge ````
+where c.gid = ruta.edge
+````
 
 ### Pregunta: ¿Cuánto tiempo tardamos en llegar?
 
@@ -363,7 +364,8 @@ select class_id,
     when class_id in(106,107,108) then maxspeed_forward/4
     else maxspeed_forward/2
   end
-from ways ````
+from ways
+````
 
 Para simplificar las consultas siguientes, vamos a poner estos valores en
 una nueva columna:
@@ -375,7 +377,8 @@ update ways_car set velocidad_pico =
     when class_id in(101,102,103) then maxspeed_forward/8
     when class_id in(106,107,108) then maxspeed_forward/4
     else maxspeed_forward/2
-  end; ````
+  end;
+````
 
 Ahora sí, vamos a calcular la ruta usando las nuevas velocidades (lo
 único que necesitamos cambiar es la velocidad que vamos a usar):
@@ -396,7 +399,8 @@ select c.gid, c.the_geom from ways_car c,
       y2
     FROM ways_car',
   36198, 2064, false, true)) as ruta
-  where c.gid = ruta.edge ````
+  where c.gid = ruta.edge
+````
 
 Comparen las dos rutas y los tiempos de traslado en
 cada caso.

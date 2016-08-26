@@ -313,8 +313,11 @@ una velocidad constante para cada tipo de via. Por ejemplo, utilicemos
 la velocidad máxima para cada segmento como base para calcular el
 tiempo de recorrido:
 
-````sql select (st_length(the_geom::geography)/1000)/maxspeed_forward
-as tiempo from ways_car limit 100 ```` Nota: cuando hacemos
+````sql
+    select (st_length(the_geom::geography)/1000)/maxspeed_forward as tiempo
+    from ways_car limit 100
+````
+Nota: cuando hacemos
 `st_length(the_geom::geography)` estamos calculando la distancia del
 segmento sobre el esferoide.
 
@@ -322,14 +325,24 @@ Con la consulta anterior tenemos el tiempo de recorrido (en horas)
 para cada segmento, ahora, esto lo podemos usar directamente como
 costo en el algoritmo de ruta:
 
-````sql select c.gid, c.the_geom from ways_car c, (SELECT seq, id1 AS
-node, id2 AS edge, cost FROM pgr_astar(' SELECT gid AS id,
-source::integer, target::integer,
-(st_length(the_geom::geography)/1000)/maxspeed_forward::double
-precision AS cost, reverse_cost::double precision AS reverse_cost, x1,
-y1, x2, y2 FROM ways_car', 36198, 2064, false, true)) as ruta where
-c.gid = ruta.edge ```` ### Pregunta: ¿Cuánto tiempo tardamos en
-llegar?
+````sql
+select c.gid, c.the_geom from ways_car c,
+(SELECT seq, id1 AS node, id2 AS edge, cost
+  FROM pgr_astar(
+    'SELECT
+      gid AS id,
+      source::integer,
+      target::integer,(st_length(the_geom::geography)/1000)/maxspeed_forward::double precision AS cost,
+      reverse_cost::double precision AS reverse_cost,
+      x1,
+      y1,
+      x2,
+      y2
+    FROM ways_car',
+  36198, 2064, false, true)) as ruta
+where c.gid = ruta.edge ````
+
+### Pregunta: ¿Cuánto tiempo tardamos en llegar?
 
 
 Como pueden ver, la ruta en este caso es igual con ambos
@@ -343,27 +356,49 @@ pico y que las velocidades se ven modificadas de la siguiente forma:
 Primero vamos a calcular la nueva velocidad máxima para cada tipo de
 segmento:
 
-````sql select class_id, case when class_id in(101,102,103) then
-maxspeed_forward/8 when class_id in(106,107,108) then
-maxspeed_forward/4 else maxspeed_forward/2 end from ways_car ```` Para
-simplificar las consultas siguientes, vamos a poner estos valores en
+````sql
+select class_id,
+  case
+      when class_id in(101,102,103) then maxspeed_forward/8
+    when class_id in(106,107,108) then maxspeed_forward/4
+    else maxspeed_forward/2
+  end
+from ways ````
+
+Para simplificar las consultas siguientes, vamos a poner estos valores en
 una nueva columna:
 
-````sql alter table ways_car add column velocidad_pico float; update
-ways_car set velocidad_pico = case when class_id in(101,102,103) then
-maxspeed_forward/8 when class_id in(106,107,108) then
-maxspeed_forward/4 else maxspeed_forward/2 end; ````
+````sql
+alter table ways add column velocidad_pico float;
+update ways_car set velocidad_pico =
+  case
+    when class_id in(101,102,103) then maxspeed_forward/8
+    when class_id in(106,107,108) then maxspeed_forward/4
+    else maxspeed_forward/2
+  end; ````
 
 Ahora sí, vamos a calcular la ruta usando las nuevas velocidades (lo
 único que necesitamos cambiar es la velocidad que vamos a usar):
 
-````sql select c.gid, c.the_geom from ways_car c, (SELECT seq, id1 AS
-node, id2 AS edge, cost FROM pgr_astar(' SELECT gid AS id,
-source::integer, target::integer,
-(st_length(the_geom::geography)/1000)/velocidad_pico::double precision
-AS cost, reverse_cost::double precision AS reverse_cost, x1, y1, x2,
-y2 FROM ways_car', 36198, 2064, false, true)) as ruta where c.gid =
-ruta.edge ```` Comparen las dos rutas y los tiempos de traslado en
+````sql
+select c.gid, c.the_geom from ways_car c,
+(SELECT seq, id1 AS node, id2 AS edge, cost
+  FROM pgr_astar(
+    'SELECT
+      gid AS id,
+      source::integer,
+      target::integer,
+      (st_length(the_geom::geography)/1000)/velocidad_pico::double precision AS cost,
+      reverse_cost::double precision AS reverse_cost,
+      x1,
+      y1,
+      x2,
+      y2
+    FROM ways_car',
+  36198, 2064, false, true)) as ruta
+  where c.gid = ruta.edge ````
+
+Comparen las dos rutas y los tiempos de traslado en
 cada caso.
 
 ## Problema del Agente Viajero
@@ -405,9 +440,12 @@ necesitamos para correr el algoritmo es:
 
 Entonces, nuestra consulta queda de la siguiente manera:
 
-````sql SELECT seq, id1, id2, round(cost::numeric, 2) AS cost FROM
-pgr_tsp('select id::int, st_x(the_geom) as x, st_y(the_geom) as y FROM
-ways_vertices_pgr where id in (36104,2099,26248,25170)', 36104, 25170)
+````sql
+SELECT seq, id1, id2, round(cost::numeric, 2) AS cost
+FROM pgr_tsp(
+  'select id::int, st_x(the_geom) as x, st_y(the_geom) as y FROM
+   ways_vertices_pgr where id in (36104,2099,26248,25170)',
+  36104, 25170)
 ````
 
 Al ejecutar la consulta, lo que nos regresa es una tabla con la
@@ -415,11 +453,17 @@ secuencia en la que tenemos que recorrer los nodos y el costo
 _estimado_ en cada segmento del recorrido. Ahora visualicemos la
 secuencia:
 
-````sql select p.id, orden.seq, p.the_geom from (SELECT seq, id1, id2,
-round(cost::numeric, 2) AS cost FROM pgr_tsp('select id::int,
-st_x(the_geom) as x, st_y(the_geom) as y FROM ways_vertices_pgr where
-id in (36104,2099,26248,25170)', 36104, 25170)) as orden join
-ways_vertices_pgr p on p.id = orden.id2 ````
+````sql
+  select p.id, orden.seq, p.the_geom
+  from (SELECT seq, id1, id2,round(cost::numeric, 2) AS cost
+  FROM pgr_tsp(
+    'select id::int,
+     st_x(the_geom) as x,
+     st_y(the_geom) as y
+     FROM ways_vertices_pgr where
+     id in (36104,2099,26248,25170)', 36104, 25170)) as orden
+  join ways_vertices_pgr p
+  on p.id = orden.id2 ````
 
 ### Ejercicio final:
 

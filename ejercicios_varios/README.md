@@ -312,3 +312,5 @@ from facilities f
 Como pueden ver, la subconsulta (la parte que está encerrada en paréntesis) se ejecuta una vez por cada renglón de la tabla `facilities`, lo que permite que, desde el punto de vista del operador de distancia, la geometría de referencia permanezca constante.
 
 ### Encontrando el area de servicio alrededor de cada punto.
+
+Ahora, ya que tenemos una forma de asignar los puntos de la tabla `facilities` a los nodos de la red, veamos como calcular el area de servicio para cada uno de esos nodos.  

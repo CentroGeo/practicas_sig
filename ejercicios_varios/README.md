@@ -14,7 +14,7 @@ no sean nodos de la red. Entonces, para calcular la ruta, necesitamos empezar
 por encontrar el nodo más cercano.
 
 Para ejemplificar, trabajemos con la red de OSM de la práctica 3 y supongamos
-que queremos encontrar la ruta entrelos puntos:
+que queremos encontrar la ruta entre los puntos:
 
 + Origen: -99.14438, 19.35159
 + Destino: -99.1815, 19.3249
@@ -25,6 +25,7 @@ Primero vamos a visualizar los puntos (en un multipoint):
 SELECT 1,ST_collect(ST_SetSRID(ST_MakePoint(-99.18147, 19.32486),4326),
                     ST_SetSRID(ST_MakePoint(-99.1815, 19.3249),4326));
 ````
+
 Si cargan el resultado de la consulta como una capa en QGIS, podrán ver que
 ninguno de los puntos es un nodo de la red. Ahora, vamos a seleccionar el nodo
 más cercano al origen, para esto vamos a utilizar el
@@ -39,12 +40,8 @@ LIMIT 1;
 ````
 El operador de distancia `<->` regresa la distancia entre dos geometrías
 (más específicamente, entre sus _bounding boxes_), aprovechando el índice espacial.
-Entonces, si ordenamos los nodos de la red por la distancia al puto y luego
+Entonces, si ordenamos los nodos de la red por la distancia al punto y luego
 pedimos sólo el primero, acabamos por encontrar el nodo más cercano.
-
-El problema con esta forma de hacerlo es que no resulta muy práctico hacer dos
-consultas, apuntar los resultados y luego calcular la ruta. Necesitamos una
-forma de _envolver_ el proceso.
 
 ## Redes para automóviles y redes para peatones.
 
@@ -84,7 +81,7 @@ class_id | type_id |       name        | priority | default_maxspeed
 124 |       1 | secondary_link    |        1 |               50
 ...
 ````
-Otra vez, consulyando la [sección pertinente de la documentación](http://wiki.openstreetmap.org/wiki/Map_Features#Highway), podemos evr que los arcos por los que pueden circular automóviles son los que tienen las siguientes clases: 101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,100. En sql:
+Otra vez, consultando la [sección pertinente de la documentación](http://wiki.openstreetmap.org/wiki/Map_Features#Highway), podemos ver que los arcos por los que pueden circular automóviles son los que tienen las siguientes clases: 101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,100. En sql:
 
 ````sql
 SELECT  *
@@ -92,7 +89,7 @@ FROM ways
 WHERE class_id in (101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,100)
 ````
 Ahora bien, podríamos crear una [vista](https://en.wikipedia.org/wiki/View_(SQL)) con la consulta que acabamos
- de hacer y trabajar sobre ella, eso nos ahorraría espacio en disco a costa de una poca de velocidad en las consultas. Sin embargo, el principal problema de usar una vista es la relación con la tabla de nodos. La tabla `ways_vertices_pgr` contiene nodos que no pertenecen a la red para automóviles, entonces, habría que construir una vista también para esa tabla, el problema es que para seleccionar los nodos que sí están el la red para autos, la consultra es mucho más lenta (involucra una doble unión, ya que el id del nodo viene tanto en la columna `source` como en la columna `target` de la tabla `ways`).
+ de hacer y trabajar sobre ella, eso nos ahorraría espacio en disco a costa de una poca de velocidad en las consultas. Sin embargo, el principal problema de usar una vista es la relación con la tabla de nodos. La tabla `ways_vertices_pgr` contiene nodos que no pertenecen a la red para automóviles, entonces, habría que construir una vista también para esa tabla, el problema es que para seleccionar los nodos que sí están el la red para autos, la consulta es mucho más lenta (involucra una doble unión, ya que el id del nodo viene tanto en la columna `source` como en la columna `target` de la tabla `ways`).
 
  Para ahorrarnos tiempo en las consultas de *pgrouting* vamos a crear tablas separadas para las nuevas redes, empecemos con los arcos:
 
@@ -127,9 +124,9 @@ Como las tablas son muy grandes, la unión toma mucho tiempo. La ventaja es que
 podemos aprovechar las geometrías para seleccionar los nodos que tocan a la red,
 debido a los índices espaciales, esa unión es relativamente rápida. El problema
 que nos queda por resolver es eliminar los ids de nodo repetidos (¿por qué se repiten?),
- para eso usamos el `distinct on (v.id)` y ordenamos por `random()` (no nos importa cuál seleccionesmos, todos son iguales).
+ para eso usamos el `distinct on (v.id)` y ordenamos por `random()` (no nos importa cuál seleccionemos, todos son iguales).
 
- Ya sólo no resta crear los índices sobre la nueva tabla para buscar eicientemente:
+ Ya sólo nos resta crear los índices sobre la nueva tabla para buscar eficientemente:
 
  ````sql
 CREATE INDEX vertices_ways_car_gix ON vertices_ways_car USING GIST (the_geom);
@@ -224,7 +221,7 @@ seq  |  node  |  edge  |         cost         |      agg_cost
 
 En este caso sencillo, lo que nos regresa `pgr_drivingDistance` es la lista de nodos (columna `node` en el resultado) que quedan a un costo menor o igual al seleccionado. La columna `cost` es el costo involucrado en cruzar el último arco (`edge` en el resultado), mientras que `agg_cost` es el costo agregado para llegar al nodo.
 
-Ahora, para dibujar el polígono que corresponde a la envolvente de los puntos, es decir, el área de servicio, necesitamos convertir los nodos en un polígono. La manera mas sencilla de hacer esto es utilizando la [envolvente convexa](https://en.wikipedia.org/wiki/Convex_hull) de los puntos. Para esto, primero es necesario unir los ids con sus respectivas geometrías:
+Ahora, para dibujar el polígono que corresponde a la envolvente de los puntos, es decir, el area de servicio, necesitamos convertir los nodos en un polígono. La manera mas sencilla de hacer esto es utilizando la [envolvente convexa](https://en.wikipedia.org/wiki/Convex_hull) de los puntos. Para esto, primero es necesario unir los ids con sus respectivas geometrías:
 
 ````sql
 select * from vertices_ways_car v,
@@ -294,9 +291,11 @@ pgr_pointsAsPolygon(
 
 Entre las ventajas de usar bases de datos tenemos que, por un lado, permiten la automatización de procesos que, de hacerse a mano, tomarían mucho tiempo y, por otro lado, al estar muy optimizadas, son capaces de realizar las consultas en tiempos relativamente cortos. En esta sección vamos a explorar un poco estas capacidades estudiando como extender los ejemplos anteriores para trabajar con múltiples nodos.
 
-### Encontrando los nosdos más cercanos a muchos puntos.
+### Encontrando los nodos más cercanos a muchos puntos.
 
-Hasta ahora vimos cómo encontrar el nodo de la red más cercano a un punto dado pero ¿Qué pasa si quiero hacerlo para muchos puntos? El procedimiento es muy similar al caso de un solo punto, el problema es que, para que el operador `<->` use el índice espacial, la geometría de referencia (el punto para el cual queremos encontrar el nodo más cercano) debe permanecer constante. Afortunadamente, podemos usar una [sub-consulta correlacionada](https://en.wikipedia.org/wiki/Correlated_subquery) para darle la vuelta a ese problema. Esto quiere decir que vamos a usar una subconsulta que regrese un valor (en este caso la geometría de referencia) por cada renglón de la consulta exterior (los nodos de la red).
+Hasta ahora vimos cómo encontrar el nodo de la red más cercano a un punto dado, pero ¿Qué pasa si quiero hacerlo para muchos puntos? El procedimiento es muy similar al caso de un solo punto, el problema es que, para que el operador `<->` use el índice espacial, la geometría de referencia (el punto para el cual queremos encontrar el nodo más cercano) debe permanecer constante.
+
+ Afortunadamente, podemos usar una [sub-consulta correlacionada](https://en.wikipedia.org/wiki/Correlated_subquery) para darle la vuelta a ese problema. Esto quiere decir que vamos a usar una subconsulta que regrese un valor (en este caso la geometría de referencia) por cada renglón de la consulta exterior (los nodos de la red).
 
 Supongamos que tenemos una capa `facilities` con los puntos que queremos asignar a los nodos más cercanos, entonces, para realizar la asignación usando el operador `<->` y aprovechando el índice espacial, hacemos:
 
@@ -313,4 +312,86 @@ Como pueden ver, la subconsulta (la parte que está encerrada en paréntesis) se
 
 ### Encontrando el area de servicio alrededor de cada punto.
 
-Ahora, ya que tenemos una forma de asignar los puntos de la tabla `facilities` a los nodos de la red, veamos como calcular el area de servicio para cada uno de esos nodos.  
+Ya que tenemos una forma de asignar los puntos de la tabla `facilities` a los nodos de la red, veamos como calcular el area de servicio para cada uno de esos nodos.
+
+Como vimos antes, para calcular el area de servicio alrededor de un punto podemos hacer:
+
+````sql
+SELECT * FROM pgr_drivingDistance(
+      'SELECT gid as id, source, target,
+       (st_length(the_geom::geography)/1000)/velocidad_pico as cost,
+       (st_length(the_geom::geography)/1000)/velocidad_pico_reversa as reverse_cost
+       FROM ways_car',
+      22048, 0.16
+    );
+````
+
+Con lo que obtenemos (entre otras cosas) los ids de los puntos que quedan a un consto menor o igual al especificado. El problema ahora es cómo hacer esto para todos los puntos contenidos, por ejemplo, en la capa facilities. El primer paso es crear una tabla con la relación entre los puntos y los nodos:
+
+````sql
+create table nodes_facilities as
+select f.id as facility, (
+  SELECT n.id
+  FROM vertices_ways_car As n
+  ORDER BY f.geom <-> n.the_geom LIMIT 1
+)as closest_node
+from facilities f
+````
+Creamos índices sobre las dos columnas:
+
+````sql
+CREATE INDEX nodes_facilities_node_idx ON nodes_facilities (closest_node);
+CREATE INDEX nodes_facilities_facility_idx ON nodes_facilities (facility);
+````
+
+Una vez que tenemos la relación entre nodos y facilities en una tabla, podemos usar la función `pgr_drivingDistance` para calcular las áreas alrededor de todos los nodos. Si vamos a la [documentación](http://docs.pgrouting.org/2.2/en/src/driving_distance/doc/pgr_drivingDistance.html#pgr-drivingdistance), podemos ver que la función admite, además de un solo id, un *Array* de ids para los nodos origen. Un *Array* es un tipo de datos de Postgres que agrupa varios elementos del mismo tipo:
+
+````sql
+select array(select closest_node from nodes_facilities limit 10)
+````
+Como ven, el resultado de esta consulta es jústamente lo que necesitamos para la versión múltiple de `pgr_drivingDistance`:
+````
+array
+[17359L, 87494L, 64874L, 213808L, 213808L, 213808L, 46291L, 124321L, 100647L, 70326L]
+````
+Entonces, podemos simplemente pasar la consulta anterior como argumento a la función:
+
+````sql
+SELECT * FROM pgr_drivingDistance(
+      'SELECT gid as id, source, target,
+       (st_length(the_geom::geography)/1000)/velocidad_pico as cost,
+       (st_length(the_geom::geography)/1000)/velocidad_pico_reversa as reverse_cost
+       FROM ways_car',
+      (select array(select closest_node from nodes_facilities)), 0.16
+    );
+````
+
+Los paréntesis alrededor de la consulta que regresa el array son para indicarle al intérprete que tiene que evaluar eso antes que lo demás.
+
+Como pueden ver, el resultado es una tabla con todos los puntos que quedan a menos de 0.16 horas de cada nodo de entrada. Entonces, agrupando por nodos (columna `from_v` en el resultado), obtendremos los puntos que necesitamos para construir cada polígono (area de servicio).
+
+En la sección anterior utilizamos `pgr_pointsAsPolygon` para encontrar la envolvente cóncava de los puntos, si bien es cierto que esa aproximación resulta en polígonos que representan mejor el área de servicio, la consulta para obtener los polígonos de esta forma es sumamente compleja, entonces, por simplicidad, vamos a utilizar la envolvente convexa. Lo primero que vamos a hacer es guardar el resultado en una tabla:
+
+````sql
+create table temp as
+select * from vertices_ways_car v,
+(SELECT node, from_v FROM pgr_drivingDistance(
+        'SELECT gid as id, source, target,
+         (st_length(the_geom::geography)/1000)/velocidad_pico as cost,
+         (st_length(the_geom::geography)/1000)/velocidad_pico_reversa as reverse_cost
+         FROM ways_car',
+        (select array(select closest_node from nodes_facilities)), 0.16
+      )) as service
+where v.id = service.node
+````
+
+Ahora sí, agrupamos sobre la columna `from_v`, colectamos las geometrías y calculamos la envolvente:
+
+````sql
+select  from_v, st_convexHull(ST_collect(the_geom)) as geom
+from temp
+group by from_v
+having count(from_v) > 2
+````
+
+La cláusula `having count(from_v) > 2` nos asegura que siempre estemos pasando más de dos puntos a la función que calcula la envolvente convexa (es decir, estamos tratando de asegurarnos de que la envolvente sea realmente un polígono).

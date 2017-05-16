@@ -488,4 +488,3 @@ Como pueden ver, el algoritmo no nos regresa la ruta que debemos
 seguir, sin embargo es posible obtenerla usando alguno de los
 algoritmos de ruteo que conocemos. El ejercicio es obtener la ruta
 completa del circuito y dibujarla en QGIS.
- 

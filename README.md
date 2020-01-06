@@ -10,13 +10,11 @@ Descripción General del Curso
 
 El objetivo principal del curso es dar al alumno el conjunto conocimientos u herramientas necesarias para integrar diversos componentes que permitan la organización, almacenamiento, manipulación, análisis y modelado de datos procedentes del mundo real  vinculados a una referencia espacial a través de bases de datos espaciales, dentro de un Sistema de Información Geografica.
 
-Para ellos utilizaremos: 
-* para todas las prácticas usaremos el manejador de bases de datos Postgres con la extensión espacial Postgis. Si tienes dudas sobre la instalación,
+Para todas las prácticas usaremos el manejador de bases de datos Postgres con la extensión espacial Postgis. Si tienes dudas sobre la instalación,
 puedes consultar los siguientes sitios:
-[Tutorial paso a paso para intalar en Windows](http://workshops.boundlessgeo.com/postgis-intro/installation.html).
-[Instalación de Postgres/Postgis en linux -Ubuntu](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/).
-* Qgis 
-* Entre otros programas o lenguajes de programación especializados en el manejo de datos espaciales 
+* [Tutorial paso a paso para intalar en Windows](http://workshops.boundlessgeo.com/postgis-intro/installation.html).
+* [Instalación de Postgres/Postgis en linux -Ubuntu](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/).
+
 
 Temario: 
 

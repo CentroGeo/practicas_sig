@@ -12,6 +12,7 @@ El objetivo del curso es dar al alumno el conjunto conocimientos y herramientas 
 
 Para todas las prácticas usaremos el manejador de bases de datos Postgres con la extensión espacial Postgis. Si tienes dudas sobre la instalación,
 puedes consultar los siguientes sitios:
-* [Tutorial paso a paso para intalar en Windows](http://workshops.boundlessgeo.com/postgis-intro/installation.html).
+* [Tutorial paso a paso para intalar en Windows](https://github.com/CentroGeo/practicas_sig/blob/master/practica_1/practica1.html).
 * [Instalación de Postgres/Postgis en linux -Ubuntu](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/).
 
+http://workshops.boundlessgeo.com/postgis-intro/installation.html

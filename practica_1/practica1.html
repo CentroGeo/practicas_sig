@@ -1,0 +1,119 @@
+<h1 id="ste-es-el-instructivo-de-la-primera-pr-ctica-de-sig-usando-postgres-postgis-">ste es el instructivo de la primera práctica de SIG Usando Postgres/PostGis.</h1>
+<p>Lo primero que tienes que hacer es extraer el contenido del zip con el censo 2010. Para esta práctica sólo vamos a utilizar
+ las carpetas del DF y del Estado de México.</p>
+<p> Una vez que hayas extraido las carpetas necesitas crear una base de datos en postgres con la extensión Postgis (aquí puedes ver un tutorial sobre cómo hacerlo:
+ <a href="http://workshops.boundlessgeo.com/postgis-intro/creating_db.html">Crear una base de datos espacial</a>.</p>
+<p> Lo primero que necesitamos hacer es cargar los <em>shapefiles</em> que vamos a utilizar en la base de datos que acabamos de crear (asumiremos que la base de datos se llama practica_sig). Para esto, en linux abrimos una terminal en la carpeta donde está el shape de las manzanas del DF y ejecutamos el siguiente comando(*):</p>
+<pre><code><span class="hljs-keyword">shp2pgsql </span>-c -s <span class="hljs-number">4326</span> -I  -W LATIN1 df_manzanas.<span class="hljs-keyword">shp </span>public.merge_manzanas <span class="hljs-title">| sudo -u postgres psql practica_sig</span>
+</code></pre><p> (*) Para una descripción completa del cargador &#39;shp2pgsql&#39; puedes consultar aquí: <a href="http://man.cx/shp2pgsql">manpage shp2pgsql</a>.
+para un instructivo más detallado: <a href="http://suite.opengeo.org/docs/dataadmin/pgGettingStarted/shp2pgsql.html">tutorial shp2pgsql</a></p>
+<p>Ahora vamos a agregar la capa de manzanas del Estado de México pero en lugar de crar una nueva tabla las vamos a pegar en la tabla que ya hicimos (&#39;public.manzanas_zmvm&#39;):</p>
+<pre><code>shp2pgsql <span class="hljs-_">-a</span> <span class="hljs-_">-s</span> 4326 -W LATIN1 mex_manzanas.shp public.merge_manzanas | sudo -u postgres psql practica_sig<span class="hljs-string">'</span>
+</code></pre><p> Nota que cambiamos el switch -c por el -a, esto es para subir el shape en modo <em>append</em> en lugar de crear una nueva tabla. Además quitamos el modificador -I para no crear un índice espacial (el índice ya está creado y volverlo a hacer arrojaría error).</p>
+<p> Hay otras formas más amigables de subir capas a la base de datos, por ejemplo la interfaz gráfica de <code>shp2pgsql</code>, búscala en el menú de inicio de windows. En escencia funciona igual que la linea de comando, utiliza esta herramienta para subir las capas de AGEBS y de calles. Recuerda que siempre vamos a querer crear una sola tabla con el <em>merge</em> de los datos para el DF y el Estado de México.</p>
+<p> Finalmente, agregamos otras dos capas que están incluidas en el directorio <em>data</em> de este repositorio:</p>
+<pre><code>shp2pgsql -c -s 32614 -I  -W LATIN1 estaciones_metro_final.shp<span class="hljs-keyword"> public</span>.estaciones_metro | sudo -u postgres psql practica_sig'
+
+shp2pgsql -c -s 32614 -I  -W LATIN1 limite_metropolitano.shp<span class="hljs-keyword"> public</span>.limite_metropolitano | sudo -u postgres psql practica_sig'
+</code></pre><p>  Nota que estas dos capas están en una proyección diferente (<em>32614</em> quiere decir UTM Zona 14 Norte elipsoide WGS84), más adelante regrersaremos a esto.</p>
+<p>  Pues hemos terminado de subir los datos para la práctica 1, ahora podemos proceder a hacer las consultas y a la diversión de Postgis. Ten en cuenta que para ejecutar las consultas y visualizarlas necesitas algun cliente para la base de datos <a href="http://www.pgadmin.org/">PGAdmin III</a> provee una interfaz amigable para administrar las bases de datos y hacer consultas pero no puedes visualizar capas geográficas. <a href="http://www.qgis.org/en/site/">QGis</a>, provee algunas funcionalidades de consulta y administración y además permite visulizar y analizar información geográfica.</p>
+<h2 id="parte-1-consultas-b-sicas-">Parte 1 Consultas básicas.</h2>
+<p>  Lo primero que vamos a hacer es proyectar las geometrías de las manzanas para que sean compatibles con las estaciones del metro y el límite metropolitano.
+  Es mejor proyectar las manzanas para que todo está en coordenadas planas, de ese modo los cálculos geométricos son mucho más rápidos:</p>
+<pre><code class="lang-sql">    <span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> merge_manzanas
+      <span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">COLUMN</span> geom
+      <span class="hljs-keyword">TYPE</span> Geometry(Polygon, <span class="hljs-number">32614</span>)
+      <span class="hljs-keyword">USING</span> ST_Transform(geom, <span class="hljs-number">32614</span>);
+</code></pre>
+<p>  Repite la misma operación para todas las capas que estén en coordenadas geográficas (SRID: 4326)</p>
+<p>  Ahora vamos a cortar las manzanas con el polígono del límite metropolitano (lo que se llama un clip, pues) y meter el resultado en la tabla  <code>manzanas_zmv</code>:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> manzanas_zmv <span class="hljs-keyword">as</span>(
+  <span class="hljs-keyword">select</span> merge_manzanas.*
+  <span class="hljs-keyword">from</span> merge_manzanas
+  <span class="hljs-keyword">inner</span> <span class="hljs-keyword">join</span> limite_metropolitano <span class="hljs-keyword">on</span>
+  st_intersects(limite_metropolitano.geom,merge_manzanas.geom)
+  )
+</code></pre>
+<p>  Nota como lo que hicimos fue en realidad un inner join pero como condición utilizamos una relación espacial: <code>st_intersects</code></p>
+<p>  Ahora vamos a crear un índice espacial sobre la geometría:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">create</span> <span class="hljs-keyword">index</span> manzanas_zmvm_gix <span class="hljs-keyword">on</span> manzanas_zmvm <span class="hljs-keyword">using</span> GIST(geom);
+</code></pre>
+<p>  <strong>TAREA:</strong> investiga qué son y para qué sirven los índices espaciales.</p>
+<p>  Antes de continuar tenemos que checar la consistencia de los datos, por ejemplo, ver si los gid son únicos:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">select</span> count<span class="hljs-comment">(*) from manzanas_zmvm  group by gid order by count(*)</span> <span class="hljs-keyword">desc</span>;
+</code></pre>
+<p>  ¿Por qué no son únicos los gids?</p>
+<p>  Como la tabla tiene unos gid&#39;s repetidos, alteramos la columna para que sean únicos:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">SEQUENCE</span> <span class="hljs-string">"manzanas_zmvm_gid_seq"</span>;
+  <span class="hljs-keyword">update</span> manzanas_zmvm <span class="hljs-keyword">set</span> gid = <span class="hljs-keyword">nextval</span>(<span class="hljs-string">'"manzanas_zmvm_gid_seq"'</span>);
+</code></pre>
+<p>  Creamos los constraints necesarios y agregamos un PK:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> manzanas_zmvm <span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">COLUMN</span> <span class="hljs-string">"gid"</span> <span class="hljs-keyword">SET</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>;
+  <span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> manzanas_zmvm <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">UNIQUE</span> (<span class="hljs-string">"gid"</span>);
+  <span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> manzanas_zmvm <span class="hljs-keyword">ADD</span> PRIMARY <span class="hljs-keyword">KEY</span> (<span class="hljs-string">"gid"</span>);
+</code></pre>
+<p>  Ahora podemos empezar a hacer algunas preguntas interesantes, por ejemplo:</p>
+<p>  ¿Cuántas manzanas quedan a 500 metros de cada estación del metro?</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">select</span> foo.* <span class="hljs-keyword">from</span>
+  (<span class="hljs-keyword">with</span> buf <span class="hljs-keyword">as</span> (<span class="hljs-keyword">select</span> st_buffer(estaciones_metro.geom,<span class="hljs-number">500.0</span>) <span class="hljs-keyword">as</span> geom , estaciones_metro.nombreesta <span class="hljs-keyword">as</span> estacion <span class="hljs-keyword">from</span> estaciones_metro)
+  <span class="hljs-keyword">select</span> <span class="hljs-keyword">count</span>(manzanas_zmvm.gid), buf.estacion <span class="hljs-keyword">from</span> manzanas_zmvm <span class="hljs-keyword">join</span> buf <span class="hljs-keyword">on</span>
+  st_intersects(buf.geom,manzanas_zmvm.geom)
+  <span class="hljs-keyword">group</span> <span class="hljs-keyword">by</span> buf.estacion) <span class="hljs-keyword">as</span> foo;
+</code></pre>
+<p>  ¿Cuánta gente vive a 500 m de una estación del metro?</p>
+<p>  <em>Nota: La columna pob1 contiene la población de cada manzana</em></p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">select</span> foo.* <span class="hljs-keyword">from</span>
+  (<span class="hljs-keyword">with</span> buf <span class="hljs-keyword">as</span> (<span class="hljs-keyword">select</span> st_buffer(estaciones_metro.geom,<span class="hljs-number">500.0</span>) <span class="hljs-keyword">as</span> geom , estaciones_metro.nombreesta <span class="hljs-keyword">as</span> estacion <span class="hljs-keyword">from</span> estaciones_metro)
+  <span class="hljs-keyword">select</span> <span class="hljs-keyword">sum</span>(manzanas_zmvm.pob1), buf.estacion <span class="hljs-keyword">from</span> manzanas_zmvm <span class="hljs-keyword">join</span> buf <span class="hljs-keyword">on</span>
+  st_intersects(buf.geom,manzanas_zmvm.geom)
+  <span class="hljs-keyword">group</span> <span class="hljs-keyword">by</span> buf.estacion) <span class="hljs-keyword">as</span> foo;
+</code></pre>
+<p>  <strong>PUNTO EXTRA:</strong> ¿Cuántas personas no viven a 500 metros de una estación de metro?</p>
+<p>  <em>Hint: Tienes que sumar el resultado de la expresión de arriba y restarla de la población total.
+  Como es el primer quiz, puedes hacerlo en dos querys</em></p>
+<p>  <strong>EJERCICIO # 1.</strong>- En los datos del Censo encontrarás shapes con las calles del DF y del Estado de México, así como de las AGEBS. Agrega estos shapes como capas en Postgis y repite los pasos 1 a 6 de este archivo para obtener un corte de las calles y de las AGEBS con la forma de la ZMVM en tablas indexadas espacialmente y con llave primaria (PK)</p>
+<h2 id="parte-2-un-ejercicio">Parte 2. Un ejercicio</h2>
+<p>  Lo que vamos a hacer en esta parte de la práctica es completar todo un flujo de trabajo para obtener mapas de cantidad y densidad de población de habitantes por colonia.</p>
+<p>  Lo primero que vamos a hacer es relacionar las tablas de manzanas (que es donde tenemos datos de población), con la de colonias. Haciendo una unión espacial podemos asignar un identificador de colonia a la capa de manzanas:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">select</span>  manzanas_zmvm.gid, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zmvm.<span class="hljs-function">geom
+  <span class="hljs-keyword">into</span> manzanas_colonias
+  <span class="hljs-keyword">from</span> manzanas_zmvm <span class="hljs-keyword">join</span> colonias <span class="hljs-keyword">on</span> <span class="hljs-title">st_intersects</span>(<span class="hljs-params">colonias.geom, manzanas_zmvm.geom</span>)</span>;
+</code></pre>
+<p>  Noten como al hacer un <code>select into</code>, creamos implícitamente la tabla <code>manzanas_colonias</code>.</p>
+<p>  <strong>EJERCICIO # 2:</strong> Crea un índice espacial sobre la geometría y agrega una llave primaria a la tabla que acabas de crear.</p>
+<p>  <strong>EJERCICIO # 3:</strong> De la misma forma en que creamos la tabla manzanas_colonias, crea una tabla que una la geometría de las calles con el id de las colonias
+  (recuerda crear su propio índice espacial y llave primaria).</p>
+<p>  Fíjense que ahora tenemos una manera de unir las tablas de manzanas y de colonias, de hecho, sería relatívamente fácil agregar la población de las manzanas de acuerdo al identificador de colonia y así obtener la población en cada colonia. Lo que vamos a hacer es un poco distinto: para acabar con mapas más bonitos, vamos a conservar la geometría de las manzanas pero agregada por las colonias, es decir, vamos a crear multipolígonos para representar a las colonias:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">select</span> st_union(geom) <span class="hljs-keyword">as</span> geom , id_colonia,
+        <span class="hljs-keyword">min</span>(nombre) <span class="hljs-keyword">as</span> nombre, <span class="hljs-keyword">min</span>(cp) <span class="hljs-keyword">as</span> cp
+  <span class="hljs-keyword">into</span> manzanas_union
+  <span class="hljs-keyword">from</span> manzanas_colonias
+  <span class="hljs-keyword">group</span> <span class="hljs-keyword">by</span> id_colonia;
+</code></pre>
+<p>  Aquí estamos usando una función agregada (noten la cláusula <code>group by</code>), para unir la geometría de las manzanas en un sólo multipolígono para cada colonia.</p>
+<p>  Ahora sí, vamos a pegarle a nuestra tabla <code>manzanas_union</code>los datos de población:</p>
+<pre><code class="lang-sql">  create <span class="hljs-selector-tag">table</span> pob_colonias as
+  select o<span class="hljs-selector-class">.pob</span>, u<span class="hljs-selector-class">.nombre</span>, u<span class="hljs-selector-class">.cp</span>, u<span class="hljs-selector-class">.geom</span>, u<span class="hljs-selector-class">.id_colonia</span> from
+  (select sum( <span class="hljs-selector-tag">q</span>.pob) as pob, <span class="hljs-selector-tag">q</span><span class="hljs-selector-class">.id_colonia</span>
+  from
+  (
+  select  m<span class="hljs-selector-class">.pob1</span> as pob, c<span class="hljs-selector-class">.id_colonia</span> as id_colonia from manzanas_zmvm m
+  join manzanas_colonias c
+  on m<span class="hljs-selector-class">.cvegeo</span> = c.cvegeo) as <span class="hljs-selector-tag">q</span>
+  group by <span class="hljs-selector-tag">q</span>.id_colonia) as o
+  join manzanas_union u
+  on u<span class="hljs-selector-class">.id_colonia</span> = o.id_colonia
+</code></pre>
+<p>  Como puedes ver, esta es una consulta bastante más complicada, pero en realidad lo que hacemos es relativamente fácil si lo lees de adentro hacia afuera: en el <em>query</em> más interno unimos las capas de manzanas y de colonias, en el <em>query</em> externo agregamos por colonia y luego unimos todo a la geometría de la capa que hicimos con la unión geométrica de las manzanas.</p>
+<p>  Lo único que hace falta ahora es calcular la densidad de población de cada colonia. Para eso vamos a agregar una columna en donde vamos a calcular el area de cada colonia:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> pob_colonias <span class="hljs-keyword">add</span> <span class="hljs-keyword">column</span> area <span class="hljs-built_in">float</span>
+</code></pre>
+<p>  Y calcular el area:</p>
+<pre><code class="lang-sql">  update  pob_colonias <span class="hljs-keyword">set</span> area <span class="hljs-comment">= st_area(geom)</span>
+</code></pre>
+<p>  Ahora vamos a crear la columna densidad y popularla con el cociente entre población y area:</p>
+<pre><code class="lang-sql">  <span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> pob_colonias <span class="hljs-keyword">add</span> <span class="hljs-keyword">column</span> densidad <span class="hljs-built_in">float</span>;
+  <span class="hljs-keyword">update</span> pob_colonias <span class="hljs-keyword">set</span> densidad = ((pob::<span class="hljs-built_in">float</span>)/area)*<span class="hljs-number">10000</span>;
+</code></pre>
+<p>  Cuando hacemos <code>pob::float</code> estamos diciendo que queremos usar los valores de población como número de punto flotante, para que no se redondeen los valores, al final multiplicamos por 10,000 para obtener habitantes por hectarea, que es la medida normal.</p>
+<p>  Finalmente, haz unos mapas con lo que obtuvimos.</p>

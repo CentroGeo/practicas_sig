@@ -20,3 +20,5 @@ El código de cada práctica se entregará en formato .sql **NO SE ACEPTA OTRO F
 Si es necesario entregar algún archivo además de del reporte se te indicará y deberas entregarlo en una carpeta comprimida de tipo .zip **NO SE ACEPTA OTRO FORMATO**, con el nombre: 
 
 - practicaNo(aquí el número de práctica)_TuNombre
+
+**Mardar al correo: karime.gonzalez@centrogeo.edu.mx**

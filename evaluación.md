@@ -17,7 +17,7 @@ El código de cada práctica se entregará en formato .sql **NO SE ACEPTA OTRO F
 -  practicaNo(aquí el número de práctica)_TuNombre
 -  tareaNo(aquí el número de práctica)_TuNombre
 
-Si es necesario entregar algún archivo además de del reporte se te indicará y deberas entregarlo en una carpeta comprimida de tipo .zip **NO SE ACEPTA OTRO FORMATO**, con el nombre: 
+Si es necesario entregar algún archivo además de del reporte se te indicará y deberas entregar todo en una carpeta comprimida de tipo .zip **NO SE ACEPTA OTRO FORMATO**, con el nombre: 
 
 - practicaNo(aquí el número de práctica)_TuNombre
 

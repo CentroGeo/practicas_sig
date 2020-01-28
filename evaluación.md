@@ -12,7 +12,7 @@ Examen final | 25%
 
 # Formato de entrega de tareas y prácticas
 
-El código de cada práctica se entregará en formato .sql **NO SE ACEPTA OTRO FORMATO** y debe llevar el siguiente nombre: 
+El código de cada práctica junto con los puntos extra se entregarán en formato .sql **NO SE ACEPTA OTRO FORMATO** y debe llevar el siguiente nombre: 
 
 -  practicaNo(aquí el número de práctica)_TuNombre
 -  tareaNo(aquí el número de práctica)_TuNombre

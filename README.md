@@ -9,6 +9,6 @@ Descripción General del Curso
 =============
 Se pretende enseñar al alumno de las nociones, conjunto de herramientas y conocimiento necesario para entender lo que es una base de datos, su importancia y aplicaciones en el mundo de los sistemas de información geográfica así como también su aplicación en la ciencia de datos. 
 
-[Introducción del curso](https://centrogeo.github.io/Geodjango_charts/GeoDjango/05-JQuery-Ajax.html)
+[Introducción del curso](http://centrogeo.github.io/practicas_sig/)
 
 http://workshops.boundlessgeo.com/postgis-intro/installation.html

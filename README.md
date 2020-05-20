@@ -6,7 +6,9 @@ Las prácticas están enumeradas y dentro de cada una encontrarás los enlaces p
 # Descripción general del curso 
  El objetivo del curso es dar al alumno el conjunto de conocimientos y herramientas necesarias para integrar diversos componentes que permitan la organización, almacenamiento, manipulación y análisis de datos procedentes del mundo real vinculados a una referencia espacial a través de bases de datos espaciales, dentro de un Sistema de Información Geográfica.  
 
-Para todas las prácticas usaremos el manejador de bases de datos Postgres  con la extensión espacial Postgis. Si tienes dudas sobre instalación puedes consultar los siguientes sitios: 
+Para todas las prácticas usaremos el manejador de bases de datos Postgres  con la extensión espacial Postgis. Si tienes dudas sobre instalación puedes consultar los siguientes sitios:   
 
+[Tutorial paso a paso para intalar en Windows](https://github.com/CentroGeo/practicas_sig/blob/master/practica_1/practica1.html).  
+[Instalación de Postgres/Postgis en linux -Ubuntu](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/).  
 
-http://workshops.boundlessgeo.com/postgis-intro/installation.html
+http://workshops.boundlessgeo.com/postgis-intro/installation.html  

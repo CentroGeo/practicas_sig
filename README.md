@@ -1,4 +1,4 @@
-Curso introductorio al diseño de bases de datos relaciones, lenguaje sql y sistemas de información geográfico (bases de datos espaciales)
+Curso de introducción al diseño de bases de datos relaciones, lenguaje sql y sistemas de información geográfico (bases de datos espaciales)
 ============
 
 En esta pagina encontrarás todo el material necesario para trabajar en el laboratorio, así como las tareas designadas para cada práctica. 

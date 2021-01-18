@@ -1,6 +1,7 @@
 
 Curso introductorio al diseño de bases de datos relaciones, lenguaje sql y siste
 mas de información geográfico (bases de datos espaciales)
+
 ============
 
 En esta pagina encontrarás todo el material necesario para trabajar en el labora
@@ -19,4 +20,4 @@ miento necesario para entender lo que es una base de datos, su importancia y apl
 icaciones en el mundo de los sistemas de información geográfica así como también
  su aplicación en la ciencia de datos. 
 
-[Introducción del curso](http://centrogeo.github.io/practicas_sig/01-Introduccion.html)
+[Práctica 1](http://centrogeo.github.io/practicas_sig/practica_1/practica1.html)

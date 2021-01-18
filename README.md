@@ -20,4 +20,4 @@ miento necesario para entender lo que es una base de datos, su importancia y apl
 icaciones en el mundo de los sistemas de información geográfica así como también
  su aplicación en la ciencia de datos. 
 
-[Práctica 1](http://centrogeo.github.io/practicas_sig/practica_1/practica1.html)
+[Práctica 1](http://centrogeo.github.io/practicas_sig/practica_1/practica1.md)

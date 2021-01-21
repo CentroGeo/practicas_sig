@@ -27,7 +27,7 @@ icaciones en el mundo de los sistemas de información geográfica así como tamb
 
 [**Práctica 3:** Modelo de Interacciones Espaciales (DE9IM)](./practica_2/Ejercicio_2.md)
 
-[**Práctica 4:** Etiquetado topológico de intersecciones](./practica_2/Ejercicio_3.md)
+[**Práctica 4:** Etiquetado topológico de intersecciones](./practica_2/Ejercico_3.md)
 
 [**Práctica 5:** Introducción a pgRouting](./practica_3/README.md)
 

@@ -21,4 +21,15 @@ miento necesario para entender lo que es una base de datos, su importancia y apl
 icaciones en el mundo de los sistemas de información geográfica así como también
  su aplicación en la ciencia de datos. 
 
-[Práctica 1](./practica_1/practica_1.md)
+[**Práctica 1:** Introducción a PostGis](./practica_1/practica_1.md)
+
+[**Práctica 2:** Primitivos Espaciales](./practica_2/Ejercicio_1.md)
+
+[**Práctica 3:** Modelo de Interacciones Espaciales (DE9IM)](./practica_2/Ejercicio_2.md)
+
+[**Práctica 4:** Etiquetado topológico de intersecciones](./practica_2/Ejercicio_3.md)
+
+[**Práctica 5:** Introducción a pgRouting](./practica_3/README.md)
+
+[**Práctica 6:** Trabajando con redes de transporte reales](./ejercicios_varios/README.md)
+

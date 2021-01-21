@@ -1,3 +1,4 @@
+[Laboratorio de Sistemas de Información Geográfica](http://centrogeo.github.io/practicas_sig/)
 
 Curso introductorio al diseño de bases de datos relaciones, lenguaje sql y siste
 mas de información geográfico (bases de datos espaciales)

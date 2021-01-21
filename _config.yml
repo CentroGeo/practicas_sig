@@ -1,6 +1,6 @@
 url: centrogeo.github.io
 baseurl: /practicas_sig
-theme: jekyll-theme-slate
+theme: jekyll-theme-midnight
 markdown: GFM
 title: Laboratorio de Sistemas de Información Geográfica
 description: Bases de Datos Geoespaciales

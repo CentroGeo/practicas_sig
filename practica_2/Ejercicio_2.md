@@ -1,4 +1,4 @@
-Ejercicio 2
+Modelo de Interacciones Espaciales (DE9IM)
 ================
 
 En este ejercicio vamos a trabajar con el modelo __DE9IM__ para relaciones espaciales. La idea es entender cómo usar dicho modelo para seleccionar objetosa través de sus relaciones espaciales con otros objetos. Para el ejercicio vamos a introducir los objetos espaciales a mano y trabajaremos con geometrías sin referencia geográfica. Cuando no especificamos la referencia espacial, pero especificamos el tipo de datos como `geometry`, estamos diciendo que las coordenadas son planas.

@@ -51,9 +51,8 @@ En esta práctica trabajaremos con redes más complejas y estudiaremos formas de
 
 #### Diseño del curso y contenidos:
 
-* Karime González Zuccolotto
 * Pablo López Ramírez
-* Alexis Navarrete Puebla
+
 
 
 

@@ -125,9 +125,17 @@ Ahora vamos a agregar la capa de manzanas del Estado de México pero en lugar de
   Lo primero que vamos a hacer es relacionar las tablas de manzanas (que es donde tenemos datos de población), con la de colonias. Haciendo una unión espacial podemos asignar un identificador de colonia a la capa de manzanas:
 
   ```sql
-  select  manzanas_zmvm.gid, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zmvm.geom
-  into manzanas_colonias
-  from manzanas_zmvm join colonias on st_intersects(colonias.geom, manzanas_zmvm.geom);
+  -- Agregamos un campo para el identificador de colonia
+  alter table manzanas_zmv add column id_colonia int;
+  
+  -- Populamos el campo a partir la unión entre manzanas y colonias 
+  update manzanas_zmv set id_colonia = sub.id_colonia
+  from 
+   (select m.id, c.id_colonia
+   from manzanas_zmv as m
+   join colonias as c
+   on st_intersects(c.geom, st_pointonsurface(m.geom))) as sub
+  where sub.id = manzanas_zmv.id
   ```
   Noten como al hacer un `select into`, creamos implícitamente la tabla `manzanas_colonias`.
 

@@ -159,17 +159,13 @@ group by id_colonia;
   Ahora sí, vamos a pegarle a nuestra tabla `manzanas_union`los datos de población:
 
   ```sql
-  create table pob_colonias as
-  select o.pob, u.nombre, u.cp, u.geom, u.id_colonia from
-  (select sum( q.pob) as pob, q.id_colonia
-  from
-  (
-  select  m.pob1 as pob, c.id_colonia as id_colonia from manzanas_zmvm m
-  join manzanas_colonias c
-  on m.cvegeo = c.cvegeo) as q
-  group by q.id_colonia) as o
-  join manzanas_union u
-  on u.id_colonia = o.id_colonia
+ alter table manzanas_union add column poblacion int;
+
+update manzanas_union set poblacion = sub.poblacion
+from (select sum("POB1") as poblacion, id_colonia
+		from manzanas_zmv
+		group by id_colonia) as sub
+where manzanas_union.id_colonia = sub.id_colonia
   ```
 
   Como puedes ver, esta es una consulta bastante más complicada, pero en realidad lo que hacemos es relativamente fácil si lo lees de adentro hacia afuera: en el _query_ más interno unimos las capas de manzanas y de colonias, en el _query_ externo agregamos por colonia y luego unimos todo a la geometría de la capa que hicimos con la unión geométrica de las manzanas.

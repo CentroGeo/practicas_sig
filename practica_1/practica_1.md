@@ -173,21 +173,12 @@ where manzanas_union.id_colonia = sub.id_colonia
   Lo único que hace falta ahora es calcular la densidad de población de cada colonia. Para eso vamos a agregar una columna en donde vamos a calcular el area de cada colonia:
 
   ```sql
-  alter table pob_colonias add column area float
+  alter table manzanas_union add column densidad_poblacion float
   ```
-  Y calcular el area:
+  Y calcular la densidad de población:
 
   ``` sql
-  update  pob_colonias set area = st_area(geom)
+ update manzanas_union set densidad_poblacion = poblacion/st_area(geom)
   ```
-
-  Ahora vamos a crear la columna densidad y popularla con el cociente entre población y area:
-
-  ``` sql
-  alter table pob_colonias add column densidad float;
-  update pob_colonias set densidad = ((pob::float)/area)*10000;
-  ```
-
-  Cuando hacemos `pob::float` estamos diciendo que queremos usar los valores de población como número de punto flotante, para que no se redondeen los valores, al final multiplicamos por 10,000 para obtener habitantes por hectarea, que es la medida normal.
 
   Finalmente, haz unos mapas con lo que obtuvimos.

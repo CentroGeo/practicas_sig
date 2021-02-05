@@ -148,11 +148,10 @@ Ahora vamos a agregar la capa de manzanas del Estado de México pero en lugar de
   Fíjense que ahora tenemos una manera de unir las tablas de manzanas y de colonias, de hecho, sería relatívamente fácil agregar la población de las manzanas de acuerdo al identificador de colonia y así obtener la población en cada colonia. Lo que vamos a hacer es un poco distinto: para acabar con mapas más bonitos, vamos a conservar la geometría de las manzanas pero agregada por las colonias, es decir, vamos a crear multipolígonos para representar a las colonias:
 
   ```sql
-  select st_union(geom) as geom , id_colonia,
-        min(nombre) as nombre, min(cp) as cp
-  into manzanas_union
-  from manzanas_colonias
-  group by id_colonia;
+select st_union(geom) as geom , id_colonia
+into manzanas_union
+from manzanas_zmv
+group by id_colonia;
   ```
 
   Aquí estamos usando una función agregada (noten la cláusula `group by`), para unir la geometría de las manzanas en un sólo multipolígono para cada colonia.

@@ -46,6 +46,7 @@ En esta práctica trabajaremos con redes más complejas y estudiaremos formas de
 
 [**Práctica 6:** Trabajando con redes de transporte reales](./ejercicios_varios/README.md)
 
+[**Práctica 7:** Modelos de accesibilidad.](./practica_7/README.md)
 
 ### Colaboradores
 

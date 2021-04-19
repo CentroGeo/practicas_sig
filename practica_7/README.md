@@ -6,7 +6,7 @@ Para esta práctica vamos a trabajar con la misma red de calles de OpenStreetMap
 
 ````sql
 CREATE TABLE ways_coyoacan AS 
-SELECT * 
+SELECT c.* 
 FROM ways_car c, alcaldias a 
 WHERE st_intersects(c.the_geom, a.geom) AND a.cvegeo = '09003';
 
@@ -78,11 +78,16 @@ SELECT * FROM pgr_dijkstraCost(
 Podemos ver el resultado en un mapa coloreando cada nodo por el costo agregado (para ver el mapa hay que hacer una unión espacial con los vértices finales)
 
 ````sql
-SELECT * FROM pgr_dijkstraCost(
-	'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost FROM ways_car',
+select n.id, costos.agg_cost, n.the_geom
+from
+(SELECT * FROM pgr_dijkstraCost(
+	'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost 
+	 FROM ways_coyoacan',
 	47095,
-	(SELECT array(SELECT DISTINCT id FROM nodos_coyoacan))
-)
+	(SELECT array(SELECT id FROM nodos_coyoacan))
+)) as costos
+join nodos_coyoacan n
+on n.id = costos.end_vid
 ````
 
 <img src="img/costo_una_bodega.png" alt="hi" class="inline"/>

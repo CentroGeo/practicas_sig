@@ -47,7 +47,9 @@ En esta práctica trabajaremos con redes más complejas y estudiaremos formas de
 [**Práctica 6:** Trabajando con redes de transporte reales](./ejercicios_varios/README.md)
 
 ## Práctica 7 Modelos de accesibilidad
-En esta práctica desarrollaremos los fundamentos para crear modelos simples de accesibilidad basados en conectividad por redes 
+En esta práctica desarrollaremos los fundamentos para crear modelos simples de accesibilidad basados en conectividad por redes.
+
+
 [**Práctica 7:** Modelos de accesibilidad.](./practica_7/README.md)
 
 ### Colaboradores

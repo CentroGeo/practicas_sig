@@ -178,3 +178,35 @@ FROM completas
 JOIN menos_una
 ON completas.nodo = menos_una.nodo
 ````
+
+A partir de la consulta anterior es muy fácil obtener la diferencia (en costo) entre los dos modelos y dibujarlas en un mapa (observa como traemos la geometría en el primer query del `WITH`):
+
+````sql
+WITH 
+completas AS 
+	(SELECT DISTINCT ON (end_vid)
+							end_vid as nodo, start_vid as bodega, agg_cost
+		FROM
+		(SELECT * FROM pgr_dijkstraCost(
+			'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost FROM ways_car',
+			(SELECT array(SELECT closest_node FROM bodegas_nodos)),
+			(SELECT array(SELECT DISTINCT id FROM nodos_coyoacan))
+		)) as costos
+		ORDER  BY end_vid, agg_cost asc),
+menos_una as
+	(SELECT DISTINCT ON (end_vid)
+							end_vid as nodo, start_vid as bodega, agg_cost
+		FROM
+		(SELECT * FROM pgr_dijkstraCost(
+			'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost FROM ways_car',
+			(SELECT array(SELECT closest_node FROM bodegas_nodos where bodega !=5)),
+			(SELECT array(SELECT DISTINCT id FROM nodos_coyoacan))
+		)) as costos
+		ORDER  BY end_vid, agg_cost asc)
+		
+SELECT completas.bodega, completas.nodo as asignaciom_original, completas.agg_cost as costo_original, 
+       menos_una.nodo as asignacion_modoficada, menos_una.agg_cost as costo_modificado 
+FROM completas
+JOIN menos_una
+ON completas.nodo = menos_una.nodo
+````

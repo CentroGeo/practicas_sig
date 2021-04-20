@@ -6,7 +6,7 @@ Para esta práctica vamos a trabajar con la misma red de calles de OpenStreetMap
 
 ````sql
 CREATE TABLE ways_coyoacan AS 
-SELECT * 
+SELECT c.* 
 FROM ways_car c, alcaldias a 
 WHERE st_intersects(c.the_geom, a.geom) AND a.cvegeo = '09003';
 
@@ -78,11 +78,16 @@ SELECT * FROM pgr_dijkstraCost(
 Podemos ver el resultado en un mapa coloreando cada nodo por el costo agregado (para ver el mapa hay que hacer una unión espacial con los vértices finales)
 
 ````sql
-SELECT * FROM pgr_dijkstraCost(
-	'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost FROM ways_car',
+select n.id, costos.agg_cost, n.the_geom
+from
+(SELECT * FROM pgr_dijkstraCost(
+	'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost 
+	 FROM ways_coyoacan',
 	47095,
-	(SELECT array(SELECT DISTINCT id FROM nodos_coyoacan))
-)
+	(SELECT array(SELECT id FROM nodos_coyoacan))
+)) as costos
+join nodos_coyoacan n
+on n.id = costos.end_vid
 ````
 
 <img src="img/costo_una_bodega.png" alt="hi" class="inline"/>
@@ -148,38 +153,6 @@ y los costos totales para cada nodo
 <img src="img/costos_nodos_bodegas.png" alt="hi" class="inline"/>
 
 Supongamos ahora que la bodega 5 está fuera de servicio ¿Cómo se modifican las asignaciones y los costos? Para resolver esa pregunta lo que necesitamos es repetir el cálculo con y sin la bodega faltante. Podríamos guardar cada resultado en una tabla y después unirlas para ver las diferencias, pero también podemos usar la cláusula `WITH` que nos permite usar expresiones (consultas) como si fueran tablas:
-
-````sql
-WITH 
-completas AS 
-	(SELECT DISTINCT ON (end_vid)
-							end_vid as nodo, start_vid as bodega, agg_cost
-		FROM
-		(SELECT * FROM pgr_dijkstraCost(
-			'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost FROM ways_car',
-			(SELECT array(SELECT closest_node FROM bodegas_nodos)),
-			(SELECT array(SELECT DISTINCT id FROM nodos_coyoacan))
-		)) as costos
-		ORDER  BY end_vid, agg_cost asc),
-menos_una as
-	(SELECT DISTINCT ON (end_vid)
-							end_vid as nodo, start_vid as bodega, agg_cost
-		FROM
-		(SELECT * FROM pgr_dijkstraCost(
-			'SELECT gid as id, source, target, cost_s as cost, reverse_cost_s as reverse_cost FROM ways_car',
-			(SELECT array(SELECT closest_node FROM bodegas_nodos where bodega !=5)),
-			(SELECT array(SELECT DISTINCT id FROM nodos_coyoacan))
-		)) as costos
-		ORDER  BY end_vid, agg_cost asc)
-		
-SELECT completas.bodega, completas.nodo as asignaciom_original, completas.agg_cost as costo_original, 
-       menos_una.nodo as asignacion_modoficada, menos_una.agg_cost as costo_modificado 
-FROM completas
-JOIN menos_una
-ON completas.nodo = menos_una.nodo
-````
-
-A partir de la consulta anterior es muy fácil obtener la diferencia (en costo) entre los dos modelos y dibujarlas en un mapa (observa como traemos la geometría en el primer query del `WITH`):
 
 ````sql
 WITH 
